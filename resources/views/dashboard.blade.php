@@ -4,11 +4,21 @@
     </x-slot>
 
 ```
-<!-- Add Patient Button -->
-<div class="mb-4">
+<!-- Top Buttons -->
+<div class="mb-4 flex gap-2">
     <a href="{{ route('patients.create') }}"
        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
        + Add Patient
+    </a>
+
+    <a href="{{ route('patients.index') }}"
+       class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900">
+       View All Patients
+    </a>
+
+    <a href="{{ route('appointments.create') }}"
+       class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+       + Book Appointment
     </a>
 </div>
 
@@ -21,7 +31,6 @@
 
 <!-- Stats -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-
     <div class="bg-white p-6 rounded-xl shadow">
         <p class="text-gray-500 text-sm">Total Patients</p>
         <h2 class="text-3xl font-bold mt-2">{{ $patientsCount }}</h2>
@@ -36,7 +45,6 @@
         <p class="text-gray-500 text-sm">Doctors Available</p>
         <h2 class="text-3xl font-bold mt-2">{{ $doctorsCount }}</h2>
     </div>
-
 </div>
 
 <!-- Main Section -->
@@ -69,7 +77,6 @@
                             {{ $patient->status }}
                         </td>
 
-                        <!-- ACTIONS -->
                         <td class="py-2">
                             <a href="{{ route('patients.edit', $patient->id) }}"
                                class="bg-yellow-500 text-white px-2 py-1 rounded text-xs">
@@ -78,7 +85,7 @@
 
                             <form action="{{ route('patients.destroy', $patient->id) }}"
                                   method="POST"
-                                  style="display:inline;">
+                                  class="inline">
                                 @csrf
                                 @method('DELETE')
 
@@ -88,7 +95,6 @@
                                 </button>
                             </form>
                         </td>
-
                     </tr>
                 @empty
                     <tr>
@@ -110,6 +116,57 @@
             <li>Doctors: {{ $doctorsCount }}</li>
             <li>Appointments Today: {{ $appointmentsToday }}</li>
         </ul>
+    </div>
+
+    <!-- Recent Appointments -->
+    <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow">
+        <h2 class="text-xl font-bold mb-4">Recent Appointments</h2>
+
+        <table class="w-full border-collapse">
+            <thead>
+                <tr class="bg-gray-100 text-left">
+                    <th class="p-2 border">Patient</th>
+                    <th class="p-2 border">Doctor</th>
+                    <th class="p-2 border">Date</th>
+                    <th class="p-2 border">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($recentAppointments as $appointment)
+                    <tr>
+                        <td class="p-2 border">
+                            {{ optional($appointment->patient)->name ?? 'N/A' }}
+                        </td>
+
+                        <td class="p-2 border">
+                            {{ optional($appointment->doctor)->name ?? 'N/A' }}
+                        </td>
+
+                        <td class="p-2 border">
+                            {{ $appointment->appointment_date }}
+                        </td>
+
+                        <td class="p-2 border">
+                            <span class="
+                                px-2 py-1 rounded text-white text-sm
+                                @if($appointment->status == 'Scheduled') bg-blue-500
+                                @elseif($appointment->status == 'Completed') bg-green-500
+                                @else bg-red-500
+                                @endif
+                            ">
+                                {{ $appointment->status }}
+                            </span>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="4" class="p-2 text-gray-500">
+                            No appointments found
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 
 </div>

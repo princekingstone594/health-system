@@ -51,4 +51,24 @@ class PatientController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'Patient deleted successfully');
     }
+
+    public function index(Request $request)
+    {
+        $search=$request->input('search');
+
+        $patients = Patient::when($search, function ($query, $search) {
+            return $query->where('name', 'like', "%{$search}%")
+                ->orWhere('status', 'like', "%{$search}%");
+        })
+        ->latest()
+        ->paginate(5);
+
+        return view('patients.index', compact('patients', 'search'));
+    }
+
+    public function show(Patient $patient)
+    {
+        $appointments = $patient->appointments;
+        return view('patients.show', compact('patient', 'appointments'));
+    }
 }

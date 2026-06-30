@@ -6,7 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class Patient extends Model
 {
-    //
-}
+    protected $fillable = [
+        'name',
+        'email',
+        'phone',
+        'address',
+    ];
 
-patient $fillable = ['name', 'age', 'status'];
+    public function appointments()
+    {
+        return $this->hasMany(App\Models\Appointment::class);
+    }
+}
