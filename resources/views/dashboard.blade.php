@@ -129,6 +129,7 @@
                     <th class="p-2 border">Doctor</th>
                     <th class="p-2 border">Date</th>
                     <th class="p-2 border">Status</th>
+                    <th class="p-2 border">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -143,7 +144,7 @@
                         </td>
 
                         <td class="p-2 border">
-                            {{ $appointment->appointment_date }}
+                            {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('d M Y, H:i') }}
                         </td>
 
                         <td class="p-2 border">
@@ -157,10 +158,35 @@
                                 {{ $appointment->status }}
                             </span>
                         </td>
+
+                        <td class="p-2 border flex gap-2">
+
+                            <!-- Edit -->
+                            <a href="{{ route('appointments.edit', $appointment->id) }}"
+                               class="bg-yellow-500 text-white px-2 py-1 rounded text-xs hover:bg-yellow-600">
+                                Edit
+                            </a>
+
+                            <!-- Cancel -->
+                            @if($appointment->status !== 'Cancelled')
+                                <form action="{{ route('appointments.cancel', $appointment->id) }}"
+                                      method="POST">
+                                    @csrf
+                                    @method('PATCH')
+
+                                    <button type="submit"
+                                            onclick="return confirm('Cancel this appointment?')"
+                                            class="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700">
+                                        Cancel
+                                    </button>
+                                </form>
+                            @endif
+
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="p-2 text-gray-500">
+                        <td colspan="5" class="p-2 text-gray-500 text-center">
                             No appointments found
                         </td>
                     </tr>

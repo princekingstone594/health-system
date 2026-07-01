@@ -39,6 +39,11 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/appointments', [AppointmentController::class, 'store'])
         ->name('appointments.store');
+    Route::get('/appointments/{appointment}/edit', [AppointmentController::class, 'edit'])->name('appointments.edit');
+    Route::put('/appointments/{appointment}', [AppointmentController::class, 'update'])->name('appointments.update');
+    Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
+    Route::get('/appointments/booked-slots', [AppointmentController::class, 'getBookedSlots'])
+        ->name('appointments.bookedSlots');
 });
 
 require __DIR__.'/auth.php';
