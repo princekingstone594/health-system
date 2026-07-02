@@ -31,5 +31,9 @@ class DashboardController extends Controller
             'recentPatients',
             'recentAppointments'
         ));
+
+        $appointments = \App\Models\Appointment::with(['patient', 'doctor'])->latest()->get();
+
+        return view('dashboard', compact('appointments'));
     }
 }

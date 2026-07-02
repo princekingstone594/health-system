@@ -5,6 +5,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\AppointmentController;
+use App\Models\Appointment;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     return view('welcome');
@@ -14,7 +16,6 @@ Route::get('/', function () {
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
-
 // ✅ Protected routes
 Route::middleware(['auth'])->group(function () {
 
