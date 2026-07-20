@@ -77,4 +77,11 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
+Route::middleware(['auth', 'role:doctor'])->group(function () 
+{
+    Route::get('/availability', [DoctorAvailabilityController::class, 'index'])->name('availability.index');
+    Route::get('/availability/create', [DoctorAvailabilityController::class, 'create'])->name('availability.create');
+    Route::post('/availability', [DoctorAvailabilityController::class, 'store'])-name('availability.store');
+});
+
 require __DIR__.'/auth.php';

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\Doctor;
+use App\Models\DoctorAvailability;
 
 class AppointmentController extends Controller
 {
@@ -13,9 +14,32 @@ class AppointmentController extends Controller
     {
         $patients = Patient::all();
         $doctors = Doctor::all();
-        $timeslots = $this->getTimeSlots();
 
-        return view('appointments.create', compact('patients', 'doctors', 'timeslots'));
+        $timeslots = [];
+
+        // If doctor selected (optional later via JS)
+        if (request()->doctor_id) {
+            $doctor = Doctor::find(request()->doctor_id);
+
+            if ($doctor && request()->appointment_date) {
+
+                $day = date('l', strtotime(request()->appointment_date));
+
+                $availability = DoctorAvailability::where('doctor_id', $doctor->id)
+                    ->where('day', $day)
+                    ->first();
+
+                if ($availability) {
+                    $timeslots = $this->generateSlots(
+                        $availability->start_time,
+                        $availability->end_time,
+                        $availability->slot_duration
+                    );
+                }
+            }
+        }
+
+        return view('appointments.create', compact('patients', 'doctors', 'timeslots', 'patient'));
     }
 
     public function store(Request $request)
@@ -27,17 +51,17 @@ class AppointmentController extends Controller
             'appointment_time' => 'required',
         ]);
 
-        // Check for double booking
-        $existingAppointment = Appointment::where('doctor_id', $request->doctor_id)
+        // ❗ Double booking protection
+        $exists = Appointment::where('doctor_id', $request->doctor_id)
             ->where('appointment_date', $request->appointment_date)
             ->where('appointment_time', $request->appointment_time)
             ->where('status', '!=', 'Cancelled')
             ->exists();
 
-        if ($existingAppointment) {
+        if ($exists) {
             return back()
                 ->withInput()
-                ->withErrors(['appointment_time' => 'This time slot is already booked for this doctor.']);
+                ->withErrors(['appointment_time' => 'This time slot is already booked.']);
         }
 
         Appointment::create([
@@ -55,7 +79,22 @@ class AppointmentController extends Controller
     {
         $patients = Patient::all();
         $doctors = Doctor::all();
-        $timeslots = $this->getTimeSlots();
+
+        $timeslots = [];
+
+        $day = date('l', strtotime($appointment->appointment_date));
+
+        $availability = DoctorAvailability::where('doctor_id', $appointment->doctor_id)
+            ->where('day', $day)
+            ->first();
+
+        if ($availability) {
+            $timeslots = $this->generateSlots(
+                $availability->start_time,
+                $availability->end_time,
+                $availability->slot_duration
+            );
+        }
 
         return view('appointments.edit', compact('appointment', 'patients', 'doctors', 'timeslots'));
     }
@@ -69,18 +108,18 @@ class AppointmentController extends Controller
             'appointment_time' => 'required',
         ]);
 
-        // Check for double booking (excluding current appointment)
-        $existingAppointment = Appointment::where('doctor_id', $request->doctor_id)
+        // ❗ Prevent double booking (excluding current)
+        $exists = Appointment::where('doctor_id', $request->doctor_id)
             ->where('appointment_date', $request->appointment_date)
             ->where('appointment_time', $request->appointment_time)
             ->where('id', '!=', $appointment->id)
             ->where('status', '!=', 'Cancelled')
             ->exists();
 
-        if ($existingAppointment) {
+        if ($exists) {
             return back()
                 ->withInput()
-                ->withErrors(['appointment_time' => 'This time slot is already booked for this doctor.']);
+                ->withErrors(['appointment_time' => 'This time slot is already booked.']);
         }
 
         $appointment->update([
@@ -97,35 +136,43 @@ class AppointmentController extends Controller
     {
         $appointment->update(['status' => 'Cancelled']);
 
-        return redirect()->back()->with('success', 'Appointment cancelled successfully!');
+        return back()->with('success', 'Appointment cancelled successfully!');
     }
 
-    private function getTimeSlots()
+    /**
+     * 🔥 Generate slots dynamically
+     */
+    private function generateSlots($start, $end, $duration)
     {
-        return [
-            '09:00',
-            '09:30',
-            '10:00',
-            '10:30',
-            '11:00',
-            '11:30',
-            '14:00',
-            '14:30',
-            '15:00',
-            '15:30',
-        ];
+        $slots = [];
+
+        $startTime = strtotime($start);
+        $endTime = strtotime($end);
+
+        while ($startTime < $endTime) {
+
+            $slotEnd = strtotime("+{$duration} minutes", $startTime);
+
+            if ($slotEnd > $endTime) break;
+
+            $slots[] = date('H:i', $startTime);
+
+            $startTime = $slotEnd;
+        }
+
+        return $slots;
     }
 
+    /**
+     * 🔥 Used by AJAX (hide booked slots)
+     */
     public function getBookedSlots(Request $request)
     {
-        $doctorId = $request->doctor_id;
-        $date = $request->appointment_date;
-
-        $bookedSlots = Appointment::where('doctor_id', $doctorId)
-            ->where('appointment_date', $date)
+        $bookedSlots = Appointment::where('doctor_id', $request->doctor_id)
+            ->where('appointment_date', $request->appointment_date)
             ->where('status', '!=', 'Cancelled')
             ->pluck('appointment_time');
-        
+
         return response()->json($bookedSlots);
     }
 }
