@@ -79,14 +79,41 @@
 
     <!-- MODAL -->
     <div id="dayModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white w-96 p-6 rounded-xl shadow-lg">
+       <div class="bg-white w-96 p-6 rounded-xl shadow-lg">
 
-            <h3 class="text-lg font-semibold mb-3">Appointments</h3>
+          <h3 class="text-lg font-semibold mb-3">Create Appointment</h3>
 
-            <div id="dayContent">Loading...</div>
+          <form id="appointmentForm">
+             @csrf
 
-            <button onclick="closeModal()" class="mt-4 bg-gray-700 text-white px-4 py-2 rounded">
-                Close
+             <input type="hidden" name="doctor_id" value="{{ auth()->user()->doctor->id }}">
+             <input type="hidden" name="appointment_date" id="modalDate">
+
+             <!-- Date Display -->
+             <p class="mb-2 text-sm text-gray-600" id="displayDate"></p>
+
+             <!-- Patient -->
+             <select name="patient_id" class="w-full border p-2 mb-2">
+                @foreach(\App\Models\Patient::all() as $patient)
+                    <option value="{{ $patient->id }}">{{ $patient->name }}</option>
+                @endforeach
+             </select>
+
+             <!-- Time -->
+             <select name="appointment_time" id="modalTime" class="w-full border p-2 mb-2">
+                <option value="">Select time</option>
+             </select>
+
+             <!-- Errors -->
+             <div id="formError" class="text-red-500 text-sm mb-2"></div>
+
+             <button class="bg-blue-600 text-white px-4 py-2 rounded w-full">
+                 Save Appointment
+             </button>
+            </form>
+
+            <button onclick="closeModal()" class="mt-3 text-gray-600 w-full">
+               Cancel
             </button>
         </div>
     </div>
@@ -97,27 +124,63 @@
 function openDay(date) {
     document.getElementById('dayModal').classList.remove('hidden');
 
-    fetch(`/appointments/booked-slots?doctor_id={{ auth()->user()->doctor->id }}&appointment_date=${date}`)
+    document.getElementById('modalDate').value = date;
+    document.getElementById('displayDate').innerText = date;
+
+    const doctorId = "{{ auth()->user()->doctor->id }}";
+    const timeSelect = document.getElementById('modalTime');
+
+    // Fetch available slots
+    fetch(`/appointments/create?doctor_id=${doctorId}&appointment_date=${date}`)
+        .then(res => res.text())
+        .then(html => {
+            let parser = new DOMParser();
+            let doc = parser.parseFromString(html, 'text/html');
+            let options = doc.querySelectorAll('#time option');
+
+            timeSelect.innerHTML = '';
+
+            options.forEach(opt => {
+                timeSelect.appendChild(opt.cloneNode(true));
+            });
+
+            // Remove booked slots
+            return fetch(`/appointments/booked-slots?doctor_id=${doctorId}&appointment_date=${date}`);
+        })
         .then(res => res.json())
-        .then(slots => {
-
-            let html = `<p class="mb-2"><strong>${date}</strong></p>`;
-
-            if (slots.length === 0) {
-                html += `<p class="text-green-600">No appointments</p>`;
-            } else {
-                html += `<ul class="space-y-1">`;
-                slots.forEach(s => {
-                    html += `<li class="bg-blue-100 p-2 rounded">🕒 ${s}</li>`;
-                });
-                html += `</ul>`;
-            }
-
-            document.getElementById('dayContent').innerHTML = html;
+        .then(booked => {
+            Array.from(timeSelect.options).forEach(option => {
+                if (booked.includes(option.value)) {
+                    option.remove();
+                }
+            });
         });
 }
 
 function closeModal() {
     document.getElementById('dayModal').classList.add('hidden');
 }
+
+document.getElementById('appointmentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    let form = e.target;
+    let data = new FormData(form);
+
+    fetch("{{ route('appointments.ajax.store') }}", {
+        method: "POST",
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+        },
+        body: data
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.error) {
+            document.getElementById('formError').innerText = res.error;
+        } else {
+            location.reload(); // refresh calendar
+        }
+    });
+});
 </script>

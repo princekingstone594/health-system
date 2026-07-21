@@ -175,4 +175,35 @@ class AppointmentController extends Controller
 
         return response()->json($bookedSlots);
     }
+
+    public function ajaxStore(Request $request)
+    {
+        $request->validate([
+            'patient_id' => 'required',
+            'doctor_id' => 'required',
+            'appointment_date' => 'required|date',
+            'appointment_time' => 'required',
+        ]);
+
+        //Prevent double booking
+        $exists = \App\Models\Appointment::where('doctor_id', $request->doctor_id)
+             ->where('appointment_date', $request->appointment_date)
+             ->where('appointment_time', $request->appointment_time)
+             ->where('status', '!=', 'Cancelled')
+             ->exists();
+
+        if ($exists) {
+            return response()->json(['error' => 'Slot already booked'], 422);
+        }
+
+        \App\Models\Appointment::create([
+            'patient_id' => $request->patient_id,
+            'doctor_id' => $request->doctor_id,
+            'appointment_date' => $request->appointment_date,
+            'appointment_time' => $request->appointment_time,
+            'status' => 'Scheduled',
+        ]);
+
+        return response()->json(['success' => true]);
+    }
 }

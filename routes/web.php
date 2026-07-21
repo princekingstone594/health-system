@@ -74,6 +74,9 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/appointments/booked-slots', [AppointmentController::class, 'getBookedSlots'])
             ->name('appointments.bookedSlots');
+        
+        Route::post('/appointments/ajax-store', [App\Http\Controllers\AppointmentController::class, 'ajaxStore'])
+            ->name('appointments.ajax.store');
     });
 });
 
