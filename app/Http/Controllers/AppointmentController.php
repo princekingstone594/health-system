@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use App\Models\Appointment;
+use App\Mail\AppointmentBooked;
 use App\Models\Patient;
 use App\Models\Doctor;
 use App\Models\DoctorAvailability;
@@ -78,6 +80,16 @@ class AppointmentController extends Controller
         ]);
 
         return redirect()->route('dashboard')->with('success', 'Appointment booked successfully!');
+
+        $appointment = Appointment::create([
+            'patient_id' => $request->patient_id,
+            'doctor_id' => $request->doctor_id,
+            'appointment_date' => $request->appointment_date,
+            'appointment_time' => $request->appointment_time,
+            'status' => 'Scheduled',
+        ]);
+
+        Mail::to($appointment->patient->email)->send(new AppointmentBooked($appointment));
     }
 
     public function edit(Appointment $appointment)
@@ -209,5 +221,16 @@ class AppointmentController extends Controller
         Appointment::create($request->all() + ['status' => 'Scheduled']);
 
         return response()->json(['success' => true]);
+
+        $appointment = Appointment::create([
+            'patient_id' => $request->patient_id,
+            'doctor_id' => $request->doctor_id,
+            'appointment_date' => $request->appointment_date,
+            'appointment_time' => $request->appointment_time,
+            'status' => 'Scheduled',
+
+        ]);
+
+        Mail::to($appointment->patient->email)->send(new AppointmentBooked($appointment));
     }
 }

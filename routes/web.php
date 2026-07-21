@@ -94,6 +94,8 @@ Route::middleware(['auth'])->group(function () {
 
         // ✅ LEAVE SYSTEM
         Route::resource('leaves', LeaveController::class);
+
+        Route::get('/test-sms', [DashboardController::class, 'testSms']);
     });
 });
 
