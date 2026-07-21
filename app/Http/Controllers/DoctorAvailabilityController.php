@@ -66,8 +66,10 @@ class DoctorAvailabilityController extends Controller
            ->get()
            ->keyBy('day_of_week');
 
+        $leaves = Leave::where('doctor_id', $doctorId)->get();
+
         return view('availability.calendar', compact(
-            'start', 'end', 'appointments', 'availabilities', 'month', 'year'
+            'start', 'end', 'appointments', 'availabilities', 'month', 'year', 'leaves'
        ));
     }
 }

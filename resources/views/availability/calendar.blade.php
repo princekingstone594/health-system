@@ -41,10 +41,9 @@
                     $isCurrentMonth = $current->month == $start->month;
                 @endphp
 
-                <div class="h-28 bg-white p-1 text-xs relative
-                    {{ $isCurrentMonth ? '' : 'bg-gray-100 text-gray-400' }}"
-                    onclick="openDay('{{ $date }}')"
-                >
+                <div id="day-{{ $date }}"
+                     class="h-28 bg-white p-1 text-xs relative
+                     {{ $isCurrentMonth ? '' : 'bg-gray-100 text-gray-400' }}">
 
                     <!-- DATE -->
                     <div class="font-bold text-sm">
@@ -79,41 +78,41 @@
 
     <!-- MODAL -->
     <div id="dayModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-       <div class="bg-white w-96 p-6 rounded-xl shadow-lg">
+        <div class="bg-white w-96 p-6 rounded-xl shadow-lg">
 
-          <h3 class="text-lg font-semibold mb-3">Create Appointment</h3>
+            <h3 class="text-lg font-semibold mb-3">Create Appointment</h3>
 
-          <form id="appointmentForm">
-             @csrf
+            <form id="appointmentForm">
+                @csrf
 
-             <input type="hidden" name="doctor_id" value="{{ auth()->user()->doctor->id }}">
-             <input type="hidden" name="appointment_date" id="modalDate">
+                <input type="hidden" name="doctor_id" value="{{ auth()->user()->doctor->id }}">
+                <input type="hidden" name="appointment_date" id="modalDate">
 
-             <!-- Date Display -->
-             <p class="mb-2 text-sm text-gray-600" id="displayDate"></p>
+                <!-- Date Display -->
+                <p class="mb-2 text-sm text-gray-600" id="displayDate"></p>
 
-             <!-- Patient -->
-             <select name="patient_id" class="w-full border p-2 mb-2">
-                @foreach(\App\Models\Patient::all() as $patient)
-                    <option value="{{ $patient->id }}">{{ $patient->name }}</option>
-                @endforeach
-             </select>
+                <!-- Patient -->
+                <select name="patient_id" class="w-full border p-2 mb-2">
+                    @foreach(\App\Models\Patient::all() as $patient)
+                        <option value="{{ $patient->id }}">{{ $patient->name }}</option>
+                    @endforeach
+                </select>
 
-             <!-- Time -->
-             <select name="appointment_time" id="modalTime" class="w-full border p-2 mb-2">
-                <option value="">Select time</option>
-             </select>
+                <!-- Time -->
+                <select name="appointment_time" id="modalTime" class="w-full border p-2 mb-2">
+                    <option value="">Select time</option>
+                </select>
 
-             <!-- Errors -->
-             <div id="formError" class="text-red-500 text-sm mb-2"></div>
+                <!-- Errors -->
+                <div id="formError" class="text-red-500 text-sm mb-2"></div>
 
-             <button class="bg-blue-600 text-white px-4 py-2 rounded w-full">
-                 Save Appointment
-             </button>
+                <button class="bg-blue-600 text-white px-4 py-2 rounded w-full">
+                    Save Appointment
+                </button>
             </form>
 
             <button onclick="closeModal()" class="mt-3 text-gray-600 w-full">
-               Cancel
+                Cancel
             </button>
         </div>
     </div>
@@ -121,6 +120,26 @@
 </x-app-layout>
 
 <script>
+const leaves = @json($leaves ?? []);
+
+function isOnLeave(date) {
+    return leaves.some(l => date >= l.start_date && date <= l.end_date);
+}
+
+// APPLY LEAVE UI + CLICK HANDLING
+document.querySelectorAll('[id^="day-"]').forEach(cell => {
+    const date = cell.id.replace('day-', '');
+
+    if (isOnLeave(date)) {
+        cell.classList.add('bg-red-200', 'cursor-not-allowed');
+
+        cell.innerHTML += `<div class="text-[10px] text-red-700">Unavailable</div>`;
+    } else {
+        cell.style.cursor = 'pointer';
+        cell.onclick = () => openDay(date);
+    }
+});
+
 function openDay(date) {
     document.getElementById('dayModal').classList.remove('hidden');
 
@@ -144,7 +163,6 @@ function openDay(date) {
                 timeSelect.appendChild(opt.cloneNode(true));
             });
 
-            // Remove booked slots
             return fetch(`/appointments/booked-slots?doctor_id=${doctorId}&appointment_date=${date}`);
         })
         .then(res => res.json())
@@ -179,7 +197,7 @@ document.getElementById('appointmentForm').addEventListener('submit', function(e
         if (res.error) {
             document.getElementById('formError').innerText = res.error;
         } else {
-            location.reload(); // refresh calendar
+            location.reload();
         }
     });
 });

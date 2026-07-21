@@ -7,6 +7,7 @@ use App\Models\Appointment;
 use App\Models\Patient;
 use App\Models\Doctor;
 use App\Models\DoctorAvailability;
+use App\Models\Leave;
 
 class AppointmentController extends Controller
 {
@@ -14,28 +15,23 @@ class AppointmentController extends Controller
     {
         $patients = Patient::all();
         $doctors = Doctor::all();
-
         $timeslots = [];
 
-        // If doctor selected (optional later via JS)
-        if (request()->doctor_id) {
+        if (request()->doctor_id && request()->appointment_date) {
+
             $doctor = Doctor::find(request()->doctor_id);
+            $day = date('l', strtotime(request()->appointment_date));
 
-            if ($doctor && request()->appointment_date) {
+            $availability = DoctorAvailability::where('doctor_id', $doctor->id)
+                ->where('day', $day)
+                ->first();
 
-                $day = date('l', strtotime(request()->appointment_date));
-
-                $availability = DoctorAvailability::where('doctor_id', $doctor->id)
-                    ->where('day', $day)
-                    ->first();
-
-                if ($availability) {
-                    $timeslots = $this->generateSlots(
-                        $availability->start_time,
-                        $availability->end_time,
-                        $availability->slot_duration
-                    );
-                }
+            if ($availability) {
+                $timeslots = $this->generateSlots(
+                    $availability->start_time,
+                    $availability->end_time,
+                    $availability->slot_duration
+                );
             }
         }
 
@@ -51,7 +47,17 @@ class AppointmentController extends Controller
             'appointment_time' => 'required',
         ]);
 
-        // ❗ Double booking protection
+        // 🚫 BLOCK IF DOCTOR ON LEAVE
+        $onLeave = Leave::where('doctor_id', $request->doctor_id)
+            ->whereDate('start_date', '<=', $request->appointment_date)
+            ->whereDate('end_date', '>=', $request->appointment_date)
+            ->exists();
+
+        if ($onLeave) {
+            return back()->withErrors(['appointment_date' => 'Doctor is on leave this day.']);
+        }
+
+        // ❗ Double booking
         $exists = Appointment::where('doctor_id', $request->doctor_id)
             ->where('appointment_date', $request->appointment_date)
             ->where('appointment_time', $request->appointment_time)
@@ -59,8 +65,7 @@ class AppointmentController extends Controller
             ->exists();
 
         if ($exists) {
-            return back()
-                ->withInput()
+            return back()->withInput()
                 ->withErrors(['appointment_time' => 'This time slot is already booked.']);
         }
 
@@ -79,7 +84,6 @@ class AppointmentController extends Controller
     {
         $patients = Patient::all();
         $doctors = Doctor::all();
-
         $timeslots = [];
 
         $day = date('l', strtotime($appointment->appointment_date));
@@ -108,7 +112,17 @@ class AppointmentController extends Controller
             'appointment_time' => 'required',
         ]);
 
-        // ❗ Prevent double booking (excluding current)
+        // 🚫 LEAVE BLOCK
+        $onLeave = Leave::where('doctor_id', $request->doctor_id)
+            ->whereDate('start_date', '<=', $request->appointment_date)
+            ->whereDate('end_date', '>=', $request->appointment_date)
+            ->exists();
+
+        if ($onLeave) {
+            return back()->withErrors(['appointment_date' => 'Doctor is on leave this day.']);
+        }
+
+        // ❗ Double booking
         $exists = Appointment::where('doctor_id', $request->doctor_id)
             ->where('appointment_date', $request->appointment_date)
             ->where('appointment_time', $request->appointment_time)
@@ -117,17 +131,16 @@ class AppointmentController extends Controller
             ->exists();
 
         if ($exists) {
-            return back()
-                ->withInput()
+            return back()->withInput()
                 ->withErrors(['appointment_time' => 'This time slot is already booked.']);
         }
 
-        $appointment->update([
-            'patient_id' => $request->patient_id,
-            'doctor_id' => $request->doctor_id,
-            'appointment_date' => $request->appointment_date,
-            'appointment_time' => $request->appointment_time,
-        ]);
+        $appointment->update($request->only([
+            'patient_id',
+            'doctor_id',
+            'appointment_date',
+            'appointment_time'
+        ]));
 
         return redirect()->route('dashboard')->with('success', 'Appointment updated successfully!');
     }
@@ -135,45 +148,32 @@ class AppointmentController extends Controller
     public function cancel(Appointment $appointment)
     {
         $appointment->update(['status' => 'Cancelled']);
-
         return back()->with('success', 'Appointment cancelled successfully!');
     }
 
-    /**
-     * 🔥 Generate slots dynamically
-     */
     private function generateSlots($start, $end, $duration)
     {
         $slots = [];
-
         $startTime = strtotime($start);
         $endTime = strtotime($end);
 
         while ($startTime < $endTime) {
-
             $slotEnd = strtotime("+{$duration} minutes", $startTime);
-
             if ($slotEnd > $endTime) break;
 
             $slots[] = date('H:i', $startTime);
-
             $startTime = $slotEnd;
         }
 
         return $slots;
     }
 
-    /**
-     * 🔥 Used by AJAX (hide booked slots)
-     */
     public function getBookedSlots(Request $request)
     {
-        $bookedSlots = Appointment::where('doctor_id', $request->doctor_id)
+        return Appointment::where('doctor_id', $request->doctor_id)
             ->where('appointment_date', $request->appointment_date)
             ->where('status', '!=', 'Cancelled')
             ->pluck('appointment_time');
-
-        return response()->json($bookedSlots);
     }
 
     public function ajaxStore(Request $request)
@@ -185,24 +185,28 @@ class AppointmentController extends Controller
             'appointment_time' => 'required',
         ]);
 
-        //Prevent double booking
-        $exists = \App\Models\Appointment::where('doctor_id', $request->doctor_id)
-             ->where('appointment_date', $request->appointment_date)
-             ->where('appointment_time', $request->appointment_time)
-             ->where('status', '!=', 'Cancelled')
-             ->exists();
+        // 🚫 LEAVE BLOCK
+        $onLeave = Leave::where('doctor_id', $request->doctor_id)
+            ->whereDate('start_date', '<=', $request->appointment_date)
+            ->whereDate('end_date', '>=', $request->appointment_date)
+            ->exists();
+
+        if ($onLeave) {
+            return response()->json(['error' => 'Doctor is on leave'], 422);
+        }
+
+        // ❗ Double booking
+        $exists = Appointment::where('doctor_id', $request->doctor_id)
+            ->where('appointment_date', $request->appointment_date)
+            ->where('appointment_time', $request->appointment_time)
+            ->where('status', '!=', 'Cancelled')
+            ->exists();
 
         if ($exists) {
             return response()->json(['error' => 'Slot already booked'], 422);
         }
 
-        \App\Models\Appointment::create([
-            'patient_id' => $request->patient_id,
-            'doctor_id' => $request->doctor_id,
-            'appointment_date' => $request->appointment_date,
-            'appointment_time' => $request->appointment_time,
-            'status' => 'Scheduled',
-        ]);
+        Appointment::create($request->all() + ['status' => 'Scheduled']);
 
         return response()->json(['success' => true]);
     }

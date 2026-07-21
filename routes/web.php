@@ -5,6 +5,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\LeaveController;
+use App\Http\Controllers\DoctorAvailabilityController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -35,7 +37,7 @@ Route::middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | ADMIN + RECEPTIONIST (PATIENT MANAGEMENT)
+    | PATIENT MANAGEMENT
     |--------------------------------------------------------------------------
     */
     Route::middleware(['role:admin,receptionist'])->group(function () {
@@ -45,14 +47,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
         Route::get('/patients/{patient}/edit', [PatientController::class, 'edit'])->name('patients.edit');
         Route::delete('/patients/{patient}', [PatientController::class, 'destroy'])->name('patients.destroy');
-
-        // ⚠️ KEEP LAST
         Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
     });
 
     /*
     |--------------------------------------------------------------------------
-    | APPOINTMENTS (ALL ROLES WITH DIFFERENT PERMISSIONS LATER)
+    | APPOINTMENTS
     |--------------------------------------------------------------------------
     */
     Route::middleware(['role:admin,doctor,receptionist'])->group(function () {
@@ -74,18 +74,27 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/appointments/booked-slots', [AppointmentController::class, 'getBookedSlots'])
             ->name('appointments.bookedSlots');
-        
-        Route::post('/appointments/ajax-store', [App\Http\Controllers\AppointmentController::class, 'ajaxStore'])
+
+        // ✅ AJAX create (calendar)
+        Route::post('/appointments/ajax-store', [AppointmentController::class, 'ajaxStore'])
             ->name('appointments.ajax.store');
     });
-});
 
-Route::middleware(['auth', 'role:doctor'])->group(function () 
-{
-    Route::get('/availability', [DoctorAvailabilityController::class, 'index'])->name('availability.index');
-    Route::get('/availability/create', [DoctorAvailabilityController::class, 'create'])->name('availability.create');
-    Route::post('/availability', [DoctorAvailabilityController::class, 'store'])-name('availability.store');
-    Route::get('/availability/calendar', [DoctorAvailabilityController::class, 'calendar'])->name('availability.calendar');
+    /*
+    |--------------------------------------------------------------------------
+    | DOCTOR AVAILABILITY + CALENDAR
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['role:doctor'])->group(function () {
+
+        Route::get('/availability', [DoctorAvailabilityController::class, 'index'])->name('availability.index');
+        Route::get('/availability/create', [DoctorAvailabilityController::class, 'create'])->name('availability.create');
+        Route::post('/availability', [DoctorAvailabilityController::class, 'store'])->name('availability.store');
+        Route::get('/availability/calendar', [DoctorAvailabilityController::class, 'calendar'])->name('availability.calendar');
+
+        // ✅ LEAVE SYSTEM
+        Route::resource('leaves', LeaveController::class);
+    });
 });
 
 require __DIR__.'/auth.php';
