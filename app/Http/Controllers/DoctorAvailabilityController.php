@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\DoctorAvailability;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+use App\Models\Appointment;
 
 class DoctorAvailabilityController extends Controller
 {
@@ -42,5 +44,30 @@ class DoctorAvailabilityController extends Controller
         }
 
         return back()->with('success', 'Availability updated!');
+    }
+
+    public function calendar(Request $request)
+    {
+        $doctor = auth()->user()->doctor;
+
+        $month = $request->month ?? now()->month;
+        $year = $request->year ?? now()->year;
+
+        $start = \Carbon\Carbon::create($year, $month)->startOfMonth();
+        $end = $start->copy()->endOfMonth();
+
+        $appointments = \App\Models\Appointment::where('doctor_id', $doctor->id)
+            ->whereBetween('appointment_date', [$start, $end])
+            ->where('status', '!=', 'Cancelled')
+            ->get()
+            ->groupBy('appointment_date');
+
+        $availabilities = \App\Models\DoctorAvailability::where('doctor_id', $doctor->id)
+           ->get()
+           ->keyBy('day_of_week');
+
+        return view('availability.calendar', compact(
+            'start', 'end', 'appointments', 'availabilities', 'month', 'year'
+       ));
     }
 }

@@ -43,6 +43,12 @@
                         </x-nav-link>
                     @endif
 
+                    <!-- Availability Calendar -->
+                    @if(auth()->user()->role === 'doctor')
+                        <x-nav-link :href="route('availability.calendar')" :active="request()->routIs('availability.calendar')">
+                            Calendar
+                        </x-nav-link>
+
                 </div>
             </div>
 
