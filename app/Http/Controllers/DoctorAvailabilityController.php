@@ -2,39 +2,45 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DoctorAvailability;
 use Illuminate\Http\Request;
+use App\Models\DoctorAvailability;
+use Illuminate\Support\Facades\Auth;
 
 class DoctorAvailabilityController extends Controller
 {
     public function index()
     {
-        $availabilities = auth()->user()->availabilities;
-        return view('availability.index', compact('availabilities'));
-    }
+        $doctor = Auth::user()->doctor;
 
-    public function create()
-    {
-        return view('availability.create');
+        $availabilities = DoctorAvailability::where('doctor_id', $doctor->id)
+            ->get()
+            ->keyBy('day_of_week');
+
+        $days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+        return view('availability.index', compact('availabilities', 'days'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'day' => 'required',
-            'start_time' => 'required',
-            'end_time' => 'required',
-            'slot_duration' => 'required|integer',
-        ]);
+        $doctor = Auth::user()->doctor;
 
-        DoctorAvailability::create([
-            'doctor_id' => auth()->id(),
-            'day' => $request->day,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
-            'slot_duration' => $request->slot_duration,
-        ]);
+        foreach ($request->days as $day => $data) {
 
-        return redirect()->route('availability.index')->with('success', 'Availability added');
+            DoctorAvailability::updateOrCreate(
+                [
+                    'doctor_id' => $doctor->id,
+                    'day_of_week' => $day,
+                ],
+                [
+                    'start_time' => $data['start_time'] ?? null,
+                    'end_time' => $data['end_time'] ?? null,
+                    'slot_duration' => $data['slot_duration'] ?? 30,
+                    'is_active' => isset($data['active']),
+                ]
+            );
+        }
+
+        return back()->with('success', 'Availability updated!');
     }
 }

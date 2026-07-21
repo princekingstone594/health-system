@@ -36,6 +36,13 @@
                         </x-nav-link>
                     @endif
 
+                    <!-- Availability (DOCTOR ONLY) -->
+                    @if(auth()->user()->role === 'doctor')
+                        <x-nav-link :href="route('availability.index')" :active="request()->routeIs('availability.*')">
+                            {{ __('Availability') }}
+                        </x-nav-link>
+                    @endif
+
                 </div>
             </div>
 
@@ -112,6 +119,13 @@
             @if(in_array(auth()->user()->role, ['admin', 'doctor', 'receptionist']))
                 <x-responsive-nav-link :href="route('appointments.create')" :active="request()->routeIs('appointments.*')">
                     {{ __('Appointments') }}
+                </x-responsive-nav-link>
+            @endif
+
+            <!-- Availability (DOCTOR ONLY) -->
+            @if(auth()->user()->role === 'doctor')
+                <x-responsive-nav-link :href="route('availability.index')" :active="request()->routeIs('availability.*')">
+                    {{ __('Availability') }}
                 </x-responsive-nav-link>
             @endif
 

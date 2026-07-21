@@ -14,10 +14,11 @@ return new class extends Migration
         Schema::create('doctor_availabilities', function (Blueprint $table) {
             $table->id();
             $table->foreignId('doctor_id')->constrained('users')->cascadeOnDelete();
-            $table->string('day'); // Monday, Tesday class...
+            $table->string('day_of_week'); // Monday, Tesday class...
             $table->time('start_time');
             $table->time('end_time');
             $table->integer('slot_duration')->default(30); // minutes
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }
