@@ -40,7 +40,7 @@ class Kernel extends HttpKernel
     /**
      * Route middleware (IMPORTANT PART)
      */
-    protected $routeMiddleware = [
+    protected $middlewareAliases = [
         'auth' => \App\Http\Middleware\Authenticate::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
 

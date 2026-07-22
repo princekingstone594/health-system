@@ -190,7 +190,7 @@
 
         <!-- Pagination -->
         <div class="p-4">
-            {{ $recentAppointments->links() }}
+            {{ $recentAppointments->links('pagination::tailwind') }}
         </div>
 
     </div>

@@ -16,14 +16,13 @@ class DashboardController extends Controller
         $doctorsCount = Doctor::count();
         $appointmentsToday = Appointment::whereDate('appointment_date', today())->count();
 
-        // Recent Patients
-        $recentPatients = Patient::latest()->take(5)->get();
+        // Recent Patients (optional - not used in view yet)
+        $recentPatients = Patient::latest()->paginate(5);
 
-        // Recent Appointments
+        // ✅ FIXED: use paginate instead of get()
         $recentAppointments = Appointment::with(['patient', 'doctor'])
             ->latest()
-            ->take(5)
-            ->get();
+            ->paginate(5);
 
         return view('dashboard', compact(
             'patientsCount',
@@ -32,10 +31,6 @@ class DashboardController extends Controller
             'recentPatients',
             'recentAppointments'
         ));
-
-        $appointments = \App\Models\Appointment::with(['patient', 'doctor'])->latest()->get();
-
-        return view('dashboard', compact('appointments'));
     }
 
     public function testSms(SmsService $sms)

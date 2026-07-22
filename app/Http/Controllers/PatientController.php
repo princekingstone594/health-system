@@ -7,7 +7,22 @@ use App\Models\Patient;
 
 class PatientController extends Controller
 {
-    // Show form
+    // List patients
+    public function index(Request $request)
+    {
+        $search = $request->input('search');
+
+        $patients = Patient::when($search, function ($query, $search) {
+                return $query->where('name', 'like', "%{$search}%")
+                             ->orWhere('status', 'like', "%{$search}%");
+            })
+            ->latest()
+            ->paginate(5);
+
+        return view('patients.index', compact('patients', 'search'));
+    }
+
+    // Show create form
     public function create()
     {
         return view('patients.create');
@@ -24,14 +39,25 @@ class PatientController extends Controller
 
         Patient::create($request->all());
 
-        return redirect()->route('dashboard')->with('success', 'Patient added successfully!');
+        return redirect()->route('patients.index')
+            ->with('success', 'Patient added successfully!');
     }
 
+    // Show single patient
+    public function show(Patient $patient)
+    {
+        $appointments = $patient->appointments;
+
+        return view('patients.show', compact('patient', 'appointments'));
+    }
+
+    // Edit form
     public function edit(Patient $patient)
     {
         return view('patients.edit', compact('patient'));
     }
 
+    // Update
     public function update(Request $request, Patient $patient)
     {
         $request->validate([
@@ -39,36 +65,19 @@ class PatientController extends Controller
             'age' => 'required|integer',
             'status' => 'required|string',
         ]);
+
         $patient->update($request->all());
 
-        return redirect()->route('dashboard')->with('success', 'Patient updated successfully');
-
+        return redirect()->route('patients.index')
+            ->with('success', 'Patient updated successfully');
     }
 
+    // Delete
     public function destroy(Patient $patient)
     {
         $patient->delete();
 
-        return redirect()->route('dashboard')->with('success', 'Patient deleted successfully');
-    }
-
-    public function index(Request $request)
-    {
-        $search=$request->input('search');
-
-        $patients = Patient::when($search, function ($query, $search) {
-            return $query->where('name', 'like', "%{$search}%")
-                ->orWhere('status', 'like', "%{$search}%");
-        })
-        ->latest()
-        ->paginate(5);
-
-        return view('patients.index', compact('patients', 'search'));
-    }
-
-    public function show(Patient $patient)
-    {
-        $appointments = $patient->appointments;
-        return view('patients.show', compact('patient', 'appointments'));
+        return redirect()->route('patients.index')
+            ->with('success', 'Patient deleted successfully');
     }
 }
