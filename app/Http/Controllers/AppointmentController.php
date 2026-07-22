@@ -10,36 +10,27 @@ use App\Models\Patient;
 use App\Models\Doctor;
 use App\Models\DoctorAvailability;
 use App\Models\Leave;
+use Carbon\Carbon;
 
 class AppointmentController extends Controller
 {
-    public function create(Patient $patient = null)
+    // ✅ CREATE (Step 4 integrated)
+    public function create(Request $request, Patient $patient = null)
     {
         $patients = Patient::all();
         $doctors = Doctor::all();
-        $timeslots = [];
 
-        if (request()->doctor_id && request()->appointment_date) {
-
-            $doctor = Doctor::find(request()->doctor_id);
-            $day = date('l', strtotime(request()->appointment_date));
-
-            $availability = DoctorAvailability::where('doctor_id', $doctor->id)
-                ->where('day', $day)
-                ->first();
-
-            if ($availability) {
-                $timeslots = $this->generateSlots(
-                    $availability->start_time,
-                    $availability->end_time,
-                    $availability->slot_duration
-                );
-            }
-        }
-
-        return view('appointments.create', compact('patients', 'doctors', 'timeslots', 'patient'));
+        return view('appointments.create', [
+            'patients' => $patients,
+            'doctors' => $doctors,
+            'patient' => $patient,
+            'doctor_id' => $request->doctor_id,
+            'date' => $request->date,
+            'time' => $request->time,
+        ]);
     }
 
+    // ✅ STORE (Step 5 integrated + fixed)
     public function store(Request $request)
     {
         $request->validate([
@@ -49,17 +40,19 @@ class AppointmentController extends Controller
             'appointment_time' => 'required',
         ]);
 
-        // 🚫 BLOCK IF DOCTOR ON LEAVE
+        // 🚫 LEAVE BLOCK
         $onLeave = Leave::where('doctor_id', $request->doctor_id)
             ->whereDate('start_date', '<=', $request->appointment_date)
             ->whereDate('end_date', '>=', $request->appointment_date)
             ->exists();
 
         if ($onLeave) {
-            return back()->withErrors(['appointment_date' => 'Doctor is on leave this day.']);
+            return back()->withErrors([
+                'appointment_date' => 'Doctor is on leave this day.'
+            ]);
         }
 
-        // ❗ Double booking
+        // ❗ DOUBLE BOOKING PROTECTION (Step 5)
         $exists = Appointment::where('doctor_id', $request->doctor_id)
             ->where('appointment_date', $request->appointment_date)
             ->where('appointment_time', $request->appointment_time)
@@ -67,20 +60,12 @@ class AppointmentController extends Controller
             ->exists();
 
         if ($exists) {
-            return back()->withInput()
-                ->withErrors(['appointment_time' => 'This time slot is already booked.']);
+            return back()->withInput()->withErrors([
+                'appointment_time' => 'This time slot is already booked.'
+            ]);
         }
 
-        Appointment::create([
-            'patient_id' => $request->patient_id,
-            'doctor_id' => $request->doctor_id,
-            'appointment_date' => $request->appointment_date,
-            'appointment_time' => $request->appointment_time,
-            'status' => 'Scheduled',
-        ]);
-
-        return redirect()->route('dashboard')->with('success', 'Appointment booked successfully!');
-
+        // ✅ CREATE ONCE (FIXED)
         $appointment = Appointment::create([
             'patient_id' => $request->patient_id,
             'doctor_id' => $request->doctor_id,
@@ -89,32 +74,24 @@ class AppointmentController extends Controller
             'status' => 'Scheduled',
         ]);
 
-        Mail::to($appointment->patient->email)->send(new AppointmentBooked($appointment));
+        // 📧 SEND EMAIL (FIXED POSITION)
+        Mail::to($appointment->patient->email)
+            ->send(new AppointmentBooked($appointment));
+
+        return redirect()->route('dashboard')
+            ->with('success', 'Appointment booked successfully!');
     }
 
+    // ✅ EDIT
     public function edit(Appointment $appointment)
     {
         $patients = Patient::all();
         $doctors = Doctor::all();
-        $timeslots = [];
 
-        $day = date('l', strtotime($appointment->appointment_date));
-
-        $availability = DoctorAvailability::where('doctor_id', $appointment->doctor_id)
-            ->where('day', $day)
-            ->first();
-
-        if ($availability) {
-            $timeslots = $this->generateSlots(
-                $availability->start_time,
-                $availability->end_time,
-                $availability->slot_duration
-            );
-        }
-
-        return view('appointments.edit', compact('appointment', 'patients', 'doctors', 'timeslots'));
+        return view('appointments.edit', compact('appointment', 'patients', 'doctors'));
     }
 
+    // ✅ UPDATE
     public function update(Request $request, Appointment $appointment)
     {
         $request->validate([
@@ -131,10 +108,12 @@ class AppointmentController extends Controller
             ->exists();
 
         if ($onLeave) {
-            return back()->withErrors(['appointment_date' => 'Doctor is on leave this day.']);
+            return back()->withErrors([
+                'appointment_date' => 'Doctor is on leave this day.'
+            ]);
         }
 
-        // ❗ Double booking
+        // ❗ DOUBLE BOOKING
         $exists = Appointment::where('doctor_id', $request->doctor_id)
             ->where('appointment_date', $request->appointment_date)
             ->where('appointment_time', $request->appointment_time)
@@ -143,8 +122,9 @@ class AppointmentController extends Controller
             ->exists();
 
         if ($exists) {
-            return back()->withInput()
-                ->withErrors(['appointment_time' => 'This time slot is already booked.']);
+            return back()->withInput()->withErrors([
+                'appointment_time' => 'This time slot is already booked.'
+            ]);
         }
 
         $appointment->update($request->only([
@@ -154,15 +134,19 @@ class AppointmentController extends Controller
             'appointment_time'
         ]));
 
-        return redirect()->route('dashboard')->with('success', 'Appointment updated successfully!');
+        return redirect()->route('dashboard')
+            ->with('success', 'Appointment updated successfully!');
     }
 
+    // ✅ CANCEL
     public function cancel(Appointment $appointment)
     {
         $appointment->update(['status' => 'Cancelled']);
+
         return back()->with('success', 'Appointment cancelled successfully!');
     }
 
+    // 🔧 SLOT GENERATOR
     private function generateSlots($start, $end, $duration)
     {
         $slots = [];
@@ -180,57 +164,50 @@ class AppointmentController extends Controller
         return $slots;
     }
 
-    public function getBookedSlots(Request $request)
+    // 🔥 SMART BOOKING PAGE
+    public function booking()
     {
-        return Appointment::where('doctor_id', $request->doctor_id)
-            ->where('appointment_date', $request->appointment_date)
-            ->where('status', '!=', 'Cancelled')
-            ->pluck('appointment_time');
+        $doctors = Doctor::all();
+
+        return view('appointments.booking', compact('doctors'));
     }
 
-    public function ajaxStore(Request $request)
+    // 🔥 AVAILABLE SLOTS (FIXED VERSION)
+    public function getAvailableSlots(Request $request)
     {
-        $request->validate([
-            'patient_id' => 'required',
-            'doctor_id' => 'required',
-            'appointment_date' => 'required|date',
-            'appointment_time' => 'required',
-        ]);
+        $doctorId = $request->doctor_id;
+        $date = $request->date;
 
-        // 🚫 LEAVE BLOCK
-        $onLeave = Leave::where('doctor_id', $request->doctor_id)
-            ->whereDate('start_date', '<=', $request->appointment_date)
-            ->whereDate('end_date', '>=', $request->appointment_date)
-            ->exists();
+        $day = strtolower(Carbon::parse($date)->format('l'));
 
-        if ($onLeave) {
-            return response()->json(['error' => 'Doctor is on leave'], 422);
+        // ✅ FIXED QUERY
+        $availability = DoctorAvailability::where('doctor_id', $doctorId)
+            ->where('day', $day)
+            ->first();
+
+        if (!$availability) {
+            return response()->json([]);
         }
 
-        // ❗ Double booking
-        $exists = Appointment::where('doctor_id', $request->doctor_id)
-            ->where('appointment_date', $request->appointment_date)
-            ->where('appointment_time', $request->appointment_time)
+        $start = Carbon::parse($availability->start_time);
+        $end = Carbon::parse($availability->end_time);
+
+        $slots = [];
+
+        while ($start < $end) {
+            $slots[] = $start->format('H:i');
+            $start->addMinutes(30);
+        }
+
+        // 🚫 REMOVE BOOKED
+        $booked = Appointment::where('doctor_id', $doctorId)
+            ->whereDate('appointment_date', $date)
             ->where('status', '!=', 'Cancelled')
-            ->exists();
+            ->pluck('appointment_time')
+            ->toArray();
 
-        if ($exists) {
-            return response()->json(['error' => 'Slot already booked'], 422);
-        }
+        $available = array_values(array_diff($slots, $booked));
 
-        Appointment::create($request->all() + ['status' => 'Scheduled']);
-
-        return response()->json(['success' => true]);
-
-        $appointment = Appointment::create([
-            'patient_id' => $request->patient_id,
-            'doctor_id' => $request->doctor_id,
-            'appointment_date' => $request->appointment_date,
-            'appointment_time' => $request->appointment_time,
-            'status' => 'Scheduled',
-
-        ]);
-
-        Mail::to($appointment->patient->email)->send(new AppointmentBooked($appointment));
+        return response()->json($available);
     }
 }
