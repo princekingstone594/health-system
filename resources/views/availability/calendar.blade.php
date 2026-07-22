@@ -3,22 +3,20 @@
         <div class="flex justify-between items-center">
             <h2 class="text-xl font-semibold text-gray-800">Calendar</h2>
 
-            <!-- Navigation -->
             <div class="flex items-center gap-2">
                 <a href="{{ route('availability.calendar', ['month' => $start->copy()->subMonth()->month, 'year' => $start->copy()->subMonth()->year]) }}"
-                   class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">←</a>
+                   class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300">←</a>
 
                 <span class="px-4 py-1 font-semibold text-gray-700">
                     {{ $start->format('F Y') }}
                 </span>
 
                 <a href="{{ route('availability.calendar', ['month' => $start->copy()->addMonth()->month, 'year' => $start->copy()->addMonth()->year]) }}"
-                   class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">→</a>
+                   class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300">→</a>
             </div>
         </div>
     </x-slot>
 
-    <!-- Calendar -->
     <div class="max-w-7xl mx-auto mt-6 bg-white p-6 rounded-xl shadow-sm">
 
         <div class="grid grid-cols-7 text-center text-sm font-semibold text-gray-500 mb-3">
@@ -39,7 +37,8 @@
                 @endphp
 
                 <div id="day-{{ $date }}"
-                     class="h-28 p-2 text-xs relative transition
+                     data-date="{{ $date }}"
+                     class="day-cell h-28 p-2 text-xs relative transition
                      {{ $isCurrentMonth ? 'bg-white hover:bg-gray-50' : 'bg-gray-100 text-gray-400' }}">
 
                     <div class="font-semibold text-sm text-gray-700">
@@ -47,8 +46,11 @@
                     </div>
 
                     <div class="mt-1 space-y-1 overflow-hidden">
+
                         @foreach($dayAppointments->take(3) as $appt)
-                            <div class="bg-blue-500 text-white px-1.5 py-0.5 rounded text-[10px] truncate">
+                            <div class="appointment bg-blue-500 text-white px-1.5 py-0.5 rounded text-[10px] truncate cursor-move"
+                                 draggable="true"
+                                 data-id="{{ $appt->id }}">
                                 {{ $appt->appointment_time }}
                             </div>
                         @endforeach
@@ -58,6 +60,7 @@
                                 +{{ $dayAppointments->count() - 3 }} more
                             </div>
                         @endif
+
                     </div>
                 </div>
 
@@ -66,16 +69,11 @@
         </div>
     </div>
 
-    <!-- ===================== -->
     <!-- MODAL -->
-    <!-- ===================== -->
     <div id="dayModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
-
         <div class="bg-white w-full max-w-md p-6 rounded-xl shadow-lg">
 
-            <h3 class="text-lg font-semibold mb-4 text-gray-800">
-                Create Appointment
-            </h3>
+            <h3 class="text-lg font-semibold mb-4">Create Appointment</h3>
 
             <form id="appointmentForm" class="space-y-3">
                 @csrf
@@ -84,58 +82,99 @@
                 <input type="hidden" name="appointment_date" id="modalDate">
                 <input type="hidden" name="appointment_time" id="selectedTimeInput">
 
-                <p class="text-sm text-gray-500" id="displayDate"></p>
+                <p id="displayDate" class="text-sm text-gray-500"></p>
 
-                <!-- Patient -->
-                <select name="patient_id"
-                    class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <select name="patient_id" class="w-full border rounded-lg px-3 py-2">
                     @foreach(\App\Models\Patient::all() as $patient)
                         <option value="{{ $patient->id }}">{{ $patient->name }}</option>
                     @endforeach
                 </select>
 
-                <!-- Slots (NEW) -->
                 <div id="slotContainer" class="grid grid-cols-3 gap-2"></div>
 
-                <!-- Error -->
                 <div id="formError" class="text-red-500 text-sm"></div>
 
-                <button
-                    class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">
+                <button class="w-full bg-blue-600 text-white py-2 rounded-lg">
                     Save Appointment
                 </button>
             </form>
 
-            <button onclick="closeModal()"
-                class="mt-3 w-full text-gray-500 hover:text-gray-700">
+            <button onclick="closeModal()" class="mt-3 w-full text-gray-500">
                 Cancel
             </button>
         </div>
     </div>
-
 </x-app-layout>
 
 <script>
 const leaves = @json($leaves ?? []);
 let selectedTime = null;
+let draggedAppointmentId = null;
 
 function isOnLeave(date) {
     return leaves.some(l => date >= l.start_date && date <= l.end_date);
 }
 
-// Apply leave + click
-document.querySelectorAll('[id^="day-"]').forEach(cell => {
-    const date = cell.id.replace('day-', '');
+// INIT CELLS
+document.querySelectorAll('.day-cell').forEach(cell => {
+    const date = cell.dataset.date;
 
     if (isOnLeave(date)) {
         cell.classList.add('bg-red-100', 'cursor-not-allowed');
-        cell.innerHTML += `<div class="text-[10px] text-red-600 mt-1">Unavailable</div>`;
+        cell.innerHTML += `<div class="text-[10px] text-red-600">Unavailable</div>`;
     } else {
-        cell.style.cursor = 'pointer';
         cell.onclick = () => openDay(date);
     }
+
+    // DROP EVENTS
+    cell.addEventListener('dragover', e => {
+        e.preventDefault();
+        cell.classList.add('bg-blue-100');
+    });
+
+    cell.addEventListener('dragleave', () => {
+        cell.classList.remove('bg-blue-100');
+    });
+
+    cell.addEventListener('drop', () => {
+        cell.classList.remove('bg-blue-100');
+
+        if (isOnLeave(date)) {
+            alert('Doctor is on leave');
+            return;
+        }
+
+        fetch(`/appointments/${draggedAppointmentId}/reschedule`, {
+            method: 'PUT',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ appointment_date: date })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.error) alert(res.error);
+            else location.reload();
+        });
+    });
 });
 
+// DRAG
+document.querySelectorAll('.appointment').forEach(el => {
+
+    el.addEventListener('dragstart', function (e) {
+        e.stopPropagation();
+        draggedAppointmentId = this.dataset.id;
+        this.classList.add('opacity-50');
+    });
+
+    el.addEventListener('dragend', function () {
+        this.classList.remove('opacity-50');
+    });
+});
+
+// MODAL
 function openDay(date) {
     document.getElementById('dayModal').classList.remove('hidden');
     document.getElementById('dayModal').classList.add('flex');
@@ -151,7 +190,7 @@ function closeModal() {
     document.getElementById('dayModal').classList.remove('flex');
 }
 
-// 🔥 LOAD SLOTS (UPGRADED)
+// LOAD SLOTS
 function loadSlots(date) {
     const doctorId = "{{ auth()->user()->doctor->id }}";
 
@@ -162,8 +201,8 @@ function loadSlots(date) {
             let container = document.getElementById('slotContainer');
             container.innerHTML = '';
 
-            if (slots.length === 0) {
-                container.innerHTML = '<p class="text-gray-400 text-sm">No slots available</p>';
+            if (!slots.length) {
+                container.innerHTML = '<p class="text-gray-400">No slots</p>';
                 return;
             }
 
@@ -171,10 +210,9 @@ function loadSlots(date) {
                 let btn = document.createElement('button');
                 btn.innerText = slot;
 
-                btn.className = "border px-2 py-1 rounded text-sm hover:bg-blue-500 hover:text-white";
+                btn.className = "border px-2 py-1 rounded text-sm";
 
                 btn.onclick = () => {
-
                     document.querySelectorAll('#slotContainer button')
                         .forEach(b => b.classList.remove('bg-blue-600','text-white'));
 
@@ -194,27 +232,21 @@ document.getElementById('appointmentForm').addEventListener('submit', function(e
     e.preventDefault();
 
     if (!selectedTime) {
-        document.getElementById('formError').innerText = "Please select a time slot";
+        document.getElementById('formError').innerText = "Select a slot";
         return;
     }
 
-    let form = e.target;
-    let data = new FormData(form);
+    let data = new FormData(this);
 
     fetch("{{ route('appointments.ajax.store') }}", {
         method: "POST",
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-        },
+        headers: { 'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value },
         body: data
     })
     .then(res => res.json())
     .then(res => {
-        if (res.error) {
-            document.getElementById('formError').innerText = res.error;
-        } else {
-            location.reload(); // 🔥 can upgrade to live insert later
-        }
+        if (res.error) document.getElementById('formError').innerText = res.error;
+        else location.reload();
     });
 });
 </script>

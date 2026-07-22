@@ -43,6 +43,10 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/appointments/book', [AppointmentController::class, 'booking'])
          ->name('appointments.booking');
+
+    Route::put('/appointments/{appointmet}/reschedule',
+       [App\Http\Controllers\AppoitnmentController::class, 'reschedule'])->name('appointments.reschedule');
+       
     /*
     |--------------------------------------------------------------------------
     | PATIENT MANAGEMENT
