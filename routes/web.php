@@ -40,6 +40,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/bookings/slots', [AppointmentController::class, 'getAvailableSlots'])
          ->name('appointment.slots');
+
+    Route::get('/appointments/book', [AppointmentController::class, 'booking'])
+         ->name('appointments.booking');
     /*
     |--------------------------------------------------------------------------
     | PATIENT MANAGEMENT

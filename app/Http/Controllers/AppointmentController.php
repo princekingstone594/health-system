@@ -167,9 +167,13 @@ class AppointmentController extends Controller
     // 🔥 SMART BOOKING PAGE
     public function booking()
     {
-        $doctors = Doctor::all();
+        $doctors = User::where ('role', 'doctor')->get();
 
-        return view('appointments.booking', compact('doctors'));
+        return view('appointments.booking', [
+            'doctors' => $doctors,
+            'selectedDate' => $request->date,
+            'selectedDoctor' => $request->doctor_id,
+        ]);
     }
 
     // 🔥 AVAILABLE SLOTS (FIXED VERSION)
