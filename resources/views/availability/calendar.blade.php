@@ -1,33 +1,34 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center">
-            <h2 class="text-xl font-semibold">Calendar</h2>
+            <h2 class="text-xl font-semibold text-gray-800">Calendar</h2>
 
-            <!-- NAVIGATION -->
-            <div class="flex gap-2">
+            <!-- Navigation -->
+            <div class="flex items-center gap-2">
                 <a href="{{ route('availability.calendar', ['month' => $start->copy()->subMonth()->month, 'year' => $start->copy()->subMonth()->year]) }}"
-                   class="px-3 py-1 bg-gray-200 rounded">←</a>
+                   class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">←</a>
 
-                <span class="px-4 py-1 font-semibold">
+                <span class="px-4 py-1 font-semibold text-gray-700">
                     {{ $start->format('F Y') }}
                 </span>
 
                 <a href="{{ route('availability.calendar', ['month' => $start->copy()->addMonth()->month, 'year' => $start->copy()->addMonth()->year]) }}"
-                   class="px-3 py-1 bg-gray-200 rounded">→</a>
+                   class="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300 transition">→</a>
             </div>
         </div>
     </x-slot>
 
-    <div class="max-w-7xl mx-auto mt-6 bg-white dark:bg-gray-800 p-4 rounded-xl shadow">
+    <!-- Calendar Card -->
+    <div class="max-w-7xl mx-auto mt-6 bg-white p-6 rounded-xl shadow-sm">
 
-        <!-- DAYS HEADER -->
-        <div class="grid grid-cols-7 text-center font-semibold text-gray-600 mb-2">
+        <!-- Days -->
+        <div class="grid grid-cols-7 text-center text-sm font-semibold text-gray-500 mb-3">
             <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div>
             <div>Thu</div><div>Fri</div><div>Sat</div>
         </div>
 
-        <!-- CALENDAR GRID -->
-        <div class="grid grid-cols-7 gap-px bg-gray-300">
+        <!-- Grid -->
+        <div class="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
 
             @php
                 $current = $start->copy()->startOfWeek();
@@ -42,19 +43,19 @@
                 @endphp
 
                 <div id="day-{{ $date }}"
-                     class="h-28 bg-white p-1 text-xs relative
-                     {{ $isCurrentMonth ? '' : 'bg-gray-100 text-gray-400' }}">
+                     class="h-28 p-2 text-xs relative transition
+                     {{ $isCurrentMonth ? 'bg-white hover:bg-gray-50' : 'bg-gray-100 text-gray-400' }}">
 
-                    <!-- DATE -->
-                    <div class="font-bold text-sm">
+                    <!-- Date -->
+                    <div class="font-semibold text-sm text-gray-700">
                         {{ $current->day }}
                     </div>
 
-                    <!-- EVENTS -->
+                    <!-- Events -->
                     <div class="mt-1 space-y-1 overflow-hidden">
 
                         @foreach($dayAppointments->take(3) as $appt)
-                            <div class="bg-blue-500 text-white px-1 rounded text-[10px] truncate">
+                            <div class="bg-blue-500 text-white px-1.5 py-0.5 rounded text-[10px] truncate">
                                 {{ $appt->appointment_time }}
                             </div>
                         @endforeach
@@ -66,7 +67,6 @@
                         @endif
 
                     </div>
-
                 </div>
 
                 @php $current->addDay(); @endphp
@@ -76,42 +76,50 @@
         </div>
     </div>
 
+    <!-- ===================== -->
     <!-- MODAL -->
-    <div id="dayModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white w-96 p-6 rounded-xl shadow-lg">
+    <!-- ===================== -->
+    <div id="dayModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
 
-            <h3 class="text-lg font-semibold mb-3">Create Appointment</h3>
+        <div class="bg-white w-full max-w-md p-6 rounded-xl shadow-lg">
 
-            <form id="appointmentForm">
+            <h3 class="text-lg font-semibold mb-4 text-gray-800">
+                Create Appointment
+            </h3>
+
+            <form id="appointmentForm" class="space-y-3">
                 @csrf
 
                 <input type="hidden" name="doctor_id" value="{{ auth()->user()->doctor->id }}">
                 <input type="hidden" name="appointment_date" id="modalDate">
 
-                <!-- Date Display -->
-                <p class="mb-2 text-sm text-gray-600" id="displayDate"></p>
+                <p class="text-sm text-gray-500" id="displayDate"></p>
 
                 <!-- Patient -->
-                <select name="patient_id" class="w-full border p-2 mb-2">
+                <select name="patient_id"
+                    class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                     @foreach(\App\Models\Patient::all() as $patient)
                         <option value="{{ $patient->id }}">{{ $patient->name }}</option>
                     @endforeach
                 </select>
 
                 <!-- Time -->
-                <select name="appointment_time" id="modalTime" class="w-full border p-2 mb-2">
+                <select name="appointment_time" id="modalTime"
+                    class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                     <option value="">Select time</option>
                 </select>
 
-                <!-- Errors -->
-                <div id="formError" class="text-red-500 text-sm mb-2"></div>
+                <!-- Error -->
+                <div id="formError" class="text-red-500 text-sm"></div>
 
-                <button class="bg-blue-600 text-white px-4 py-2 rounded w-full">
+                <button
+                    class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">
                     Save Appointment
                 </button>
             </form>
 
-            <button onclick="closeModal()" class="mt-3 text-gray-600 w-full">
+            <button onclick="closeModal()"
+                class="mt-3 w-full text-gray-500 hover:text-gray-700">
                 Cancel
             </button>
         </div>
@@ -126,14 +134,13 @@ function isOnLeave(date) {
     return leaves.some(l => date >= l.start_date && date <= l.end_date);
 }
 
-// APPLY LEAVE UI + CLICK HANDLING
+// Apply leave + click
 document.querySelectorAll('[id^="day-"]').forEach(cell => {
     const date = cell.id.replace('day-', '');
 
     if (isOnLeave(date)) {
-        cell.classList.add('bg-red-200', 'cursor-not-allowed');
-
-        cell.innerHTML += `<div class="text-[10px] text-red-700">Unavailable</div>`;
+        cell.classList.add('bg-red-100', 'cursor-not-allowed');
+        cell.innerHTML += `<div class="text-[10px] text-red-600 mt-1">Unavailable</div>`;
     } else {
         cell.style.cursor = 'pointer';
         cell.onclick = () => openDay(date);
@@ -149,7 +156,6 @@ function openDay(date) {
     const doctorId = "{{ auth()->user()->doctor->id }}";
     const timeSelect = document.getElementById('modalTime');
 
-    // Fetch available slots
     fetch(`/appointments/create?doctor_id=${doctorId}&appointment_date=${date}`)
         .then(res => res.text())
         .then(html => {

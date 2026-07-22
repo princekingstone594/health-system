@@ -4,22 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Models\Patient;
 use App\Models\Doctor;
-use App\Services\SmsService;
 use App\Models\Appointment;
+use App\Services\SmsService;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        // Stats
+        // =========================
+        // STATS
+        // =========================
         $patientsCount = Patient::count();
         $doctorsCount = Doctor::count();
+
         $appointmentsToday = Appointment::whereDate('appointment_date', today())->count();
 
-        // Recent Patients (optional - not used in view yet)
-        $recentPatients = Patient::latest()->paginate(5);
+        $upcomingAppointments = Appointment::whereDate('appointment_date', '>=', today())->count();
 
-        // ✅ FIXED: use paginate instead of get()
+        // =========================
+        // RECENT DATA
+        // =========================
+        $recentPatients = Patient::latest()->take(5)->get();
+
         $recentAppointments = Appointment::with(['patient', 'doctor'])
             ->latest()
             ->paginate(5);
@@ -28,11 +34,15 @@ class DashboardController extends Controller
             'patientsCount',
             'doctorsCount',
             'appointmentsToday',
+            'upcomingAppointments',
             'recentPatients',
             'recentAppointments'
         ));
     }
 
+    // =========================
+    // TEST SMS
+    // =========================
     public function testSms(SmsService $sms)
     {
         $sms->send('+254716435367', 'Test SMS working!');
