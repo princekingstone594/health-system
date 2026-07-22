@@ -18,21 +18,17 @@
         </div>
     </x-slot>
 
-    <!-- Calendar Card -->
+    <!-- Calendar -->
     <div class="max-w-7xl mx-auto mt-6 bg-white p-6 rounded-xl shadow-sm">
 
-        <!-- Days -->
         <div class="grid grid-cols-7 text-center text-sm font-semibold text-gray-500 mb-3">
             <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div>
             <div>Thu</div><div>Fri</div><div>Sat</div>
         </div>
 
-        <!-- Grid -->
         <div class="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
 
-            @php
-                $current = $start->copy()->startOfWeek();
-            @endphp
+            @php $current = $start->copy()->startOfWeek(); @endphp
 
             @while($current <= $end->copy()->endOfWeek())
 
@@ -46,14 +42,11 @@
                      class="h-28 p-2 text-xs relative transition
                      {{ $isCurrentMonth ? 'bg-white hover:bg-gray-50' : 'bg-gray-100 text-gray-400' }}">
 
-                    <!-- Date -->
                     <div class="font-semibold text-sm text-gray-700">
                         {{ $current->day }}
                     </div>
 
-                    <!-- Events -->
                     <div class="mt-1 space-y-1 overflow-hidden">
-
                         @foreach($dayAppointments->take(3) as $appt)
                             <div class="bg-blue-500 text-white px-1.5 py-0.5 rounded text-[10px] truncate">
                                 {{ $appt->appointment_time }}
@@ -65,14 +58,11 @@
                                 +{{ $dayAppointments->count() - 3 }} more
                             </div>
                         @endif
-
                     </div>
                 </div>
 
                 @php $current->addDay(); @endphp
-
             @endwhile
-
         </div>
     </div>
 
@@ -92,6 +82,7 @@
 
                 <input type="hidden" name="doctor_id" value="{{ auth()->user()->doctor->id }}">
                 <input type="hidden" name="appointment_date" id="modalDate">
+                <input type="hidden" name="appointment_time" id="selectedTimeInput">
 
                 <p class="text-sm text-gray-500" id="displayDate"></p>
 
@@ -103,11 +94,8 @@
                     @endforeach
                 </select>
 
-                <!-- Time -->
-                <select name="appointment_time" id="modalTime"
-                    class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                    <option value="">Select time</option>
-                </select>
+                <!-- Slots (NEW) -->
+                <div id="slotContainer" class="grid grid-cols-3 gap-2"></div>
 
                 <!-- Error -->
                 <div id="formError" class="text-red-500 text-sm"></div>
@@ -129,6 +117,7 @@
 
 <script>
 const leaves = @json($leaves ?? []);
+let selectedTime = null;
 
 function isOnLeave(date) {
     return leaves.some(l => date >= l.start_date && date <= l.end_date);
@@ -149,44 +138,65 @@ document.querySelectorAll('[id^="day-"]').forEach(cell => {
 
 function openDay(date) {
     document.getElementById('dayModal').classList.remove('hidden');
+    document.getElementById('dayModal').classList.add('flex');
 
     document.getElementById('modalDate').value = date;
     document.getElementById('displayDate').innerText = date;
 
-    const doctorId = "{{ auth()->user()->doctor->id }}";
-    const timeSelect = document.getElementById('modalTime');
-
-    fetch(`/appointments/create?doctor_id=${doctorId}&appointment_date=${date}`)
-        .then(res => res.text())
-        .then(html => {
-            let parser = new DOMParser();
-            let doc = parser.parseFromString(html, 'text/html');
-            let options = doc.querySelectorAll('#time option');
-
-            timeSelect.innerHTML = '';
-
-            options.forEach(opt => {
-                timeSelect.appendChild(opt.cloneNode(true));
-            });
-
-            return fetch(`/appointments/booked-slots?doctor_id=${doctorId}&appointment_date=${date}`);
-        })
-        .then(res => res.json())
-        .then(booked => {
-            Array.from(timeSelect.options).forEach(option => {
-                if (booked.includes(option.value)) {
-                    option.remove();
-                }
-            });
-        });
+    loadSlots(date);
 }
 
 function closeModal() {
     document.getElementById('dayModal').classList.add('hidden');
+    document.getElementById('dayModal').classList.remove('flex');
 }
 
+// 🔥 LOAD SLOTS (UPGRADED)
+function loadSlots(date) {
+    const doctorId = "{{ auth()->user()->doctor->id }}";
+
+    fetch(`/booking/slots?doctor_id=${doctorId}&date=${date}`)
+        .then(res => res.json())
+        .then(slots => {
+
+            let container = document.getElementById('slotContainer');
+            container.innerHTML = '';
+
+            if (slots.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-sm">No slots available</p>';
+                return;
+            }
+
+            slots.forEach(slot => {
+                let btn = document.createElement('button');
+                btn.innerText = slot;
+
+                btn.className = "border px-2 py-1 rounded text-sm hover:bg-blue-500 hover:text-white";
+
+                btn.onclick = () => {
+
+                    document.querySelectorAll('#slotContainer button')
+                        .forEach(b => b.classList.remove('bg-blue-600','text-white'));
+
+                    btn.classList.add('bg-blue-600','text-white');
+
+                    selectedTime = slot;
+                    document.getElementById('selectedTimeInput').value = slot;
+                };
+
+                container.appendChild(btn);
+            });
+        });
+}
+
+// SAVE
 document.getElementById('appointmentForm').addEventListener('submit', function(e) {
     e.preventDefault();
+
+    if (!selectedTime) {
+        document.getElementById('formError').innerText = "Please select a time slot";
+        return;
+    }
 
     let form = e.target;
     let data = new FormData(form);
@@ -203,7 +213,7 @@ document.getElementById('appointmentForm').addEventListener('submit', function(e
         if (res.error) {
             document.getElementById('formError').innerText = res.error;
         } else {
-            location.reload();
+            location.reload(); // 🔥 can upgrade to live insert later
         }
     });
 });

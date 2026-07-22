@@ -37,6 +37,11 @@ class PatientController extends Controller
             'status' => 'required|string',
         ]);
 
+        $patient = Patient::create($request->all());
+
+        //return JSON for AJAX
+        return response()->json($patient);
+
         Patient::create($request->all());
 
         return redirect()->route('patients.index')

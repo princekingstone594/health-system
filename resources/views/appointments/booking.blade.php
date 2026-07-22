@@ -60,11 +60,17 @@
             <!-- Patient -->
             <div>
                 <label class="text-sm font-medium">Patient</label>
-                <select name="patient_id" class="w-full border rounded-lg px-3 py-2">
+                <select id="patientSelect" name="patient_id" class="w-full border rounded-lg px-3 py-2">
                     @foreach(\App\Models\Patient::all() as $p)
                         <option value="{{ $p->id }}">{{ $p->name }}</option>
                     @endforeach
                 </select>
+
+                <button type="button"
+                   onlick="openPatientModal()"
+                   class="mt-2 text-blue-600 text-sm hover:underline">
+                   + Add New Patient
+
             </div>
 
             <button type="submit"
@@ -73,6 +79,36 @@
             </button>
         </form>
 
+    </div>
+
+</div>
+
+<div id="patientModal"
+     class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+
+    <div class="bg-white p-6 rounded-xl w-96 shadow-lg">
+        <h2 class="text-lg font-semibold mb-4">New Patient</h2>
+
+        <input type="text" id="p_name" placeholder="Name"
+            class="w-full border rounded-lg px-3 py-2 mb-3">
+
+        <input type="email" id="p_email" placeholder="Email"
+            class="w-full border rounded-lg px-3 py-2 mb-3">
+
+        <input type="text" id="p_phone" placeholder="Phone"
+            class="w-full border rounded-lg px-3 py-2 mb-4">
+
+        <div class="flex justify-end space-x-2">
+            <button onclick="closePatientModal()"
+                class="px-4 py-2 bg-gray-200 rounded">
+                Cancel
+            </button>
+
+            <button onclick="savePatient()"
+                class="px-4 py-2 bg-blue-600 text-white rounded">
+                Save
+            </button>
+        </div>
     </div>
 
 </div>
@@ -171,6 +207,55 @@ window.addEventListener('DOMContentLoaded', () => {
         loadSlots();
     }
 });
+
+function openPatientModal() {
+    document.getElementById('patientModal').classList.remove('hidden');
+    document.getElementById('patientModal').classList.add('flex');
+}
+
+function closePatientModal() {
+    document.getElementById('patientModal').classList.add('hidden');
+    document.getElementById('patientModal').classList.remove('flex');
+}
+
+function savePatient() {
+    let name = document.getElementById('p_name').value;
+    let email = document.getElementById('p_email').value;
+    let phone = document.getElementById('p_phone').value;
+
+    fetch("{{ route('patients.store') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": "{{ csrf_token() }}"
+        },
+        body: JSON.stringify({
+            name: name,
+            email: email,
+            phone: phone
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (data.id) {
+            let select = document.getElementById('patientSelect');
+
+            let option = document.createElement('option');
+            option.value = data.id;
+            option.text = data.name;
+
+            select.appendChild(option);
+            select.value = data.id;
+
+            closePatientModal();
+        } else {
+            alert('Error creating patient');
+        }
+
+    })
+    .catch(() => alert('Something went wrong'));
+}
 </script>
 
 </x-app-layout>
