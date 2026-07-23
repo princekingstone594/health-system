@@ -16,32 +16,48 @@ class StripeController extends Controller
     {
         $appointment = Appointment::findOrFail($id);
 
-        Stripe::setApiKey(config('services.stripe.secret'));
+        // 🚫 جلوگیری از پرداخت دوباره
+        if ($appointment->payment_status === 'paid') {
+            return redirect()->back()->with('error', 'This appointment is already paid.');
+        }
 
-        $session = Session::create([
-            'payment_method_types' => ['card'],
+        try {
+            Stripe::setApiKey(config('services.stripe.secret'));
 
-            'line_items' => [[
-                'price_data' => [
-                    'currency' => env('STRIPE_CURRENCY', 'usd'),
+            $session = Session::create([
+                'payment_method_types' => ['card'],
 
-                    // 💰 Price (in cents)
-                    'unit_amount' => ($appointment->price ?? 50) * 100,
-
-                    'product_data' => [
-                        'name' => 'Appointment with Dr. ' . ($appointment->doctor->name ?? 'Doctor'),
+                'line_items' => [[
+                    'price_data' => [
+                        'currency' => env('STRIPE_CURRENCY', 'usd'),
+                        'unit_amount' => ($appointment->price ?? 50) * 100,
+                        'product_data' => [
+                            'name' => 'Appointment with Dr. ' . ($appointment->doctor->name ?? 'Doctor'),
+                        ],
                     ],
+                    'quantity' => 1,
+                ]],
+
+                'mode' => 'payment',
+
+                // 🔗 Link appointment
+                'metadata' => [
+                    'appointment_id' => $appointment->id,
                 ],
-                'quantity' => 1,
-            ]],
 
-            'mode' => 'payment',
+                'success_url' => route('payment.success') . '?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => route('payment.cancel'),
+            ]);
 
-            'success_url' => route('payment.success') . '?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => route('payment.cancel'),
-        ]);
+            // 💾 Save session ID
+            $appointment->stripe_session_id = $session->id;
+            $appointment->save();
 
-        return redirect($session->url);
+            return redirect($session->url);
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Payment error: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -49,12 +65,40 @@ class StripeController extends Controller
      */
     public function success(Request $request)
     {
-        // Optional: update appointment as paid
-        // You can use session_id if needed
-        $appointment->payment_status = 'paid';
-        $appointment->save();
+        $sessionId = $request->get('session_id');
 
-        return view('payment.success');
+        if (!$sessionId) {
+            return redirect('/')->with('error', 'Missing session ID');
+        }
+
+        try {
+            Stripe::setApiKey(config('services.stripe.secret'));
+
+            $session = Session::retrieve($sessionId);
+
+            // ✅ Ensure payment is actually successful
+            if ($session->payment_status !== 'paid') {
+                return redirect('/')->with('error', 'Payment not completed.');
+            }
+
+            $appointmentId = $session->metadata->appointment_id ?? null;
+
+            if (!$appointmentId) {
+                return redirect('/')->with('error', 'Appointment not found.');
+            }
+
+            $appointment = Appointment::find($appointmentId);
+
+            if ($appointment && $appointment->payment_status !== 'paid') {
+                $appointment->payment_status = 'paid';
+                $appointment->save();
+            }
+
+            return view('payment.success', compact('appointment'));
+
+        } catch (\Exception $e) {
+            return redirect('/')->with('error', 'Payment verification failed.');
+        }
     }
 
     /**
