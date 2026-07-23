@@ -108,4 +108,42 @@ class StripeController extends Controller
     {
         return view('payment.cancel');
     }
+
+    public function webhook(Request $request)
+    {
+        $payload = $request->getContent();
+        $sigHeader = $request->header('Stripe-Signature');
+        $secret = env('STRIPE_WEBHOOK_SECRET');
+
+        try {
+            $event = \Stripe\Webhook::constructEvent(
+                $payload,
+                $sigHeader,
+                $secret
+            );
+        } catch (\UnexpectedValueException $e) {
+            return response('Invalid payload', 400);
+        } catch (\Stripe\Excception\SignatureVerificationException $e) {
+            return response('Invalid signature', 400);
+        }
+
+        // 🎯 Handle event
+        if ($event->type === 'checkout.session.completed') {
+
+            $session = $event->data->object;
+
+            $appointmentId = $session->metadata->appointment_id ?? null;
+
+            if ($appointmentId) {
+                $appointment = \App\Models\Appointment::find($appointmentId);
+
+                if ($appointment && $appointment->payment_status !== 'paid') {
+                    $appointment->payment_status = 'paid';
+                    $appointment->save();
+                }
+            }
+        }
+
+        return response('Webhook handled', 200);
+    }
 }

@@ -11,6 +11,7 @@ use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controller\StripeController;
+use App\Http\Controller\AdminController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -65,6 +66,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/payment/success', [StripeController::class, 'success'])->name('payment.success');
     Route::get('/payment/cancel', [StripeController::class, 'cancel'])->name('payment.cancel');
        
+    Route::post('/stripe/webhook', [StripeController::class, 'webhook']);
+     
+    Route::get('/admin/revenue', [AdminController::class, 'revenue'])->name('admin.revenue');
+    
     /*
     |--------------------------------------------------------------------------
     | PATIENT MANAGEMENT
