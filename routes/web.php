@@ -7,6 +7,7 @@ use App\Http\Controllers\PatientController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\DoctorAvailabilityController;
+use App\Http\Controllers\ScheduleController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -108,6 +109,8 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('leaves', LeaveController::class);
 
         Route::get('/test-sms', [DashboardController::class, 'testSms']);
+
+        Route::resource('schedules', ScheduleController::class);
     });
 });
 

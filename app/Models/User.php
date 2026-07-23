@@ -67,4 +67,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(DoctorAvailability::class, 'doctor_id');
     }
+
+    public function clinics()
+    {
+        return $this->belongsToMany(Clinic::class)->withTimestamps();
+    }
 }
