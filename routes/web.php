@@ -8,6 +8,7 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\BookingController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -41,6 +42,12 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/bookings/slots', [AppointmentController::class, 'getAvailableSlots'])
          ->name('appointment.slots');
+
+    Route::get('/book/{doctor}', [BookingController::class, 'show'])->name('booking.show');
+    Route::post('/book', [BookingController::class, 'store'])->name('booking.store');
+
+    // API for time slots
+    Route::get('/booking/slots', [BookingController::class, 'slots'])->name('booking.slots');
 
     Route::get('/appointments/book', [AppointmentController::class, 'booking'])
          ->name('appointments.booking');
