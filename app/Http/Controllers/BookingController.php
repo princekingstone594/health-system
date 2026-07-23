@@ -69,6 +69,7 @@ class BookingController extends Controller
             'time' => 'required',
             'name' => 'required',
             'phone' => 'required',
+            'email'=> 'required|email', 
         ]);
 
         Appointment::create([
@@ -79,6 +80,8 @@ class BookingController extends Controller
             'status' => 'pending',
             //Optional: create patient later
         ]);
+
+        Mail::to($request->email)->send(new AppointmentBooked($appointment));
 
         return redirect()->back()->with('success', 'Appointment booked!');
     }

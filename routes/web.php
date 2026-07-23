@@ -9,6 +9,8 @@ use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controller\StripeController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -54,6 +56,14 @@ Route::middleware(['auth'])->group(function () {
 
     Route::put('/appointments/{appointmet}/reschedule',
        [App\Http\Controllers\AppoitnmentController::class, 'reschedule'])->name('appointments.reschedule');
+
+    Route::post('/payment/checkout', [PaymentController::class, 'checkout'])->name('payment.checkout');
+    Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
+    Route::get('/payment/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
+    Route::post('/checkout/{id}', [StripeController::class, 'checkout'])->name('stripe.checkout');
+
+    Route::get('/payment/success', [StripeController::class, 'success'])->name('payment.success');
+    Route::get('/payment/cancel', [StripeController::class, 'cancel'])->name('payment.cancel');
        
     /*
     |--------------------------------------------------------------------------

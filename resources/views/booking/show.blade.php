@@ -35,7 +35,7 @@
     </div>
 
     <!-- Booking Form -->
-    <form method="POST" action="{{ route('booking.store') }}">
+    <form method="POST" action="{{ route('payment.checkout') }}">
         @csrf
 
         <input type="hidden" name="doctor_id" value="{{ $doctor->id }}">
