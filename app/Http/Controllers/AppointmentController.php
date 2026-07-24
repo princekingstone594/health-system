@@ -1,31 +1,134 @@
-public function reschedule(Request $request, $id)
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Appointment;
+use App\Models\DoctorAvailability;
+use Carbon\Carbon;
+
+class AppointmentController extends Controller
 {
-    $appointment = Appointment::findOrFail($id);
-    $newDate = $request->appointment_date;
+    /**
+     * Show booking page
+     */
+    public function create(Request $request)
+    {
+        $doctorId = $request->doctor_id;
+        $date = $request->date;
 
-    // 🚫 LEAVE
-    $onLeave = Leave::where('doctor_id', $appointment->doctor_id)
-        ->whereDate('start_date', '<=', $newDate)
-        ->whereDate('end_date', '>=', $newDate)
-        ->exists();
+        $slots = [];
 
-    if ($onLeave) {
-        return response()->json(['error' => 'Doctor is on leave']);
+        if ($doctorId && $date) {
+            $slots = $this->getAvailableSlots($doctorId, $date);
+        }
+
+        return view('appointments.create', compact('slots', 'doctorId', 'date'));
     }
 
-    // ❗ DOUBLE BOOK
-    $exists = Appointment::where('doctor_id', $appointment->doctor_id)
-        ->where('appointment_date', $newDate)
-        ->where('appointment_time', $appointment->appointment_time)
-        ->where('id', '!=', $appointment->id)
-        ->where('status', '!=', 'Cancelled')
-        ->exists();
+    /**
+     * Store appointment (BOOKING LOGIC)
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'doctor_id' => 'required|exists:users,id',
+            'date' => 'required|date',
+            'time' => 'required',
+        ]);
 
-    if ($exists) {
-        return response()->json(['error' => 'Time slot already booked']);
+        $doctorId = $request->doctor_id;
+        $date = $request->date;
+        $time = $request->time;
+
+        // 🚫 STEP 8 — Prevent double booking
+        $exists = Appointment::where('doctor_id', $doctorId)
+            ->where('date', $date)
+            ->where('time', $time)
+            ->exists();
+
+        if ($exists) {
+            return back()->with('error', 'Time slot already booked.');
+        }
+
+        // ✅ Save appointment
+        Appointment::create([
+            'user_id' => auth()->id(),
+            'doctor_id' => $doctorId,
+            'date' => $date,
+            'time' => $time,
+            'status' => 'pending',
+        ]);
+
+        return redirect()->route('appointments.index')
+            ->with('success', 'Appointment booked successfully.');
     }
 
-    $appointment->update(['appointment_date' => $newDate]);
+    /**
+     * STEP 7 — Generate slots from availability
+     * STEP 9 — Remove already booked slots
+     */
+    public function getAvailableSlots($doctorId, $date)
+    {
+        $day = strtolower(Carbon::parse($date)->format('l'));
 
-    return response()->json(['success' => true]);
+        // Get doctor's availability for that day
+        $availability = DoctorAvailability::where('doctor_id', $doctorId)
+            ->where('day', $day)
+            ->first();
+
+        if (!$availability) {
+            return [];
+        }
+
+        $start = Carbon::parse($availability->start_time);
+        $end = Carbon::parse($availability->end_time);
+
+        $slots = [];
+
+        // ⏱ STEP 7 — Generate 30-min slots
+        while ($start < $end) {
+            $slots[] = $start->format('H:i');
+            $start->addMinutes(30);
+        }
+
+        // 📦 STEP 9 — Get booked slots
+        $booked = Appointment::where('doctor_id', $doctorId)
+            ->where('date', $date)
+            ->pluck('time')
+            ->toArray();
+
+        // 🚫 Remove booked slots
+        $availableSlots = array_filter($slots, function ($slot) use ($booked) {
+            return !in_array($slot, $booked);
+        });
+
+        return array_values($availableSlots);
+    }
+
+    /**
+     * List user appointments
+     */
+    public function index()
+    {
+        $appointments = Appointment::where('user_id', auth()->id())
+            ->latest()
+            ->get();
+
+        return view('appointments.index', compact('appointments'));
+    }
+
+    public function slots(Request  $request)
+    {
+        $doctorId = $request->doctor_id;
+        $date = $request->date;
+
+        if (!$doctorId || !$date) {
+            return response()->json([]);
+        }
+
+        $slots = $this->getAvailableSlots($doctorId, $date);
+
+        return response()->json($slots);
+    }
 }

@@ -51,9 +51,9 @@
             <div class="mb-4">
                 <label class="block mb-1">Appointment Date</label>
                 <input type="date"
-                       name="appointment_date"
+                       name="date"
                        id="date"
-                       value="{{ old('appointment_date') }}"
+                       value="{{ old('date') }}"
                        class="border p-2 w-full"
                        required>
             </div>
@@ -61,9 +61,9 @@
             <!-- Time -->
             <div class="mb-4">
                 <label class="block mb-1">Time Slot</label>
-                <select name="appointment_time" id="time" class="border p-2 w-full" required>
+                <select name="time" id="time" class="border p-2 w-full" required>
                     <option value="">Select Time</option>
-                    @foreach($timeslots as $slot)
+                    @foreach($timeslots ?? [] as $slot)
                         <option value="{{ $slot }}">{{ $slot }}</option>
                     @endforeach
                 </select>
@@ -90,33 +90,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (!doctorId || !date) return;
 
-        // STEP 1: Get AVAILABLE slots from server
-        fetch(`/appointments/create?doctor_id=${doctorId}&appointment_date=${date}`)
-            .then(res => res.text())
-            .then(html => {
-                // Extract slots (quick hack via DOM parsing)
-                let parser = new DOMParser();
-                let doc = parser.parseFromString(html, 'text/html');
-                let options = doc.querySelectorAll('#time option');
+        // Loading state
+        timeSelect.innerHTML = '<option>Loading...</option>';
 
-                timeSelect.innerHTML = '';
-
-                options.forEach(opt => {
-                    timeSelect.appendChild(opt.cloneNode(true));
-                });
-
-                // STEP 2: Remove booked slots
-                return fetch(`/appointments/booked-slots?doctor_id=${doctorId}&appointment_date=${date}`);
-            })
+        fetch(`/appointments/slots?doctor_id=${doctorId}&date=${date}`)
             .then(res => res.json())
-            .then(bookedSlots => {
+            .then(slots => {
 
-                Array.from(timeSelect.options).forEach(option => {
-                    if (bookedSlots.includes(option.value)) {
-                        option.remove();
-                    }
+                timeSelect.innerHTML = '<option value="">Select Time</option>';
+
+                if (slots.length === 0) {
+                    timeSelect.innerHTML = '<option>No available slots</option>';
+                    return;
+                }
+
+                slots.forEach(slot => {
+                    let option = document.createElement('option');
+                    option.value = slot;
+                    option.textContent = slot;
+                    timeSelect.appendChild(option);
                 });
-
+            })
+            .catch(() => {
+                timeSelect.innerHTML = '<option>Error loading slots</option>';
             });
     }
 

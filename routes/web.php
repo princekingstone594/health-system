@@ -12,6 +12,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controller\StripeController;
 use App\Http\Controller\AdminController;
+use App\Http\Controllers\StripePortalController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -55,6 +56,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/appointments/book', [AppointmentController::class, 'booking'])
          ->name('appointments.booking');
 
+    Route::get('/appointment/slots', [AppointmentController::class, 'slots']);
+
     Route::put('/appointments/{appointmet}/reschedule',
        [App\Http\Controllers\AppoitnmentController::class, 'reschedule'])->name('appointments.reschedule');
 
@@ -83,6 +86,11 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::resource('appointments', AppointmentController::class);
+
+    Route::get('/billing/portal', [StripePortalController::class, 'portal'])->name('billing.portal');
+
+    Route::get('/doctor/availability', [DoctorAvailabilityController::class, 'index']);
+    Route::post('/doctor/availability', [DoctorAvailabilityController::class, 'store']);
 
   
     /*
