@@ -40,6 +40,7 @@ class AppointmentController extends Controller
         $doctorId = $request->doctor_id;
         $date = $request->date;
         $time = $request->time;
+        $appointment->status = 'pending';
 
         // 🚫 STEP 8 — Prevent double booking
         $exists = Appointment::where('doctor_id', $doctorId)

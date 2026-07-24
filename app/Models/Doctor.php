@@ -22,4 +22,9 @@ class Doctor extends Model
     {
         return $this->hasMany(DoctorAvailability::class);
     }
+
+    public function user()
+    {
+        return $this->belongsto(User::class);
+    }
 }

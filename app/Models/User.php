@@ -72,4 +72,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Clinic::class)->withTimestamps();
     }
+
+    public function doctor()
+    {
+        return $this->hasOne(Doctor::class);
+    }
 }

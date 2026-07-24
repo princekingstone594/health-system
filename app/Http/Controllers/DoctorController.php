@@ -62,7 +62,7 @@ class DoctorController extends Controller
         return back()->with('success', 'Appointment updated.');
     }
 
-    public function calenda()
+    public function calendar()
     {
         $doctorId = auth()->id();
 
@@ -89,5 +89,31 @@ class DoctorController extends Controller
             'cancelled' => '#dc2626', // red
             'default' => '#3b82f6', // blue
         };
+    }
+
+    public function approve($id)
+    {
+        $appointment = Appointment::findOrFail($id);
+
+        $appointment->status = 'approved';
+        $appointment->save();
+
+        // notify patient
+        $appointment->user->notify(new AppointmentUpdated($appointment, 'reschedule'));
+
+        return back()->with('success', 'Appointment approved.');
+    }
+
+    public function reject($id)
+    {
+        $appointment = Appointment::findOrFail($id);
+
+        $appointment->status = 'rejected';
+        $appointment->save();
+
+        // notify patient
+        $appointment->user->notify(new AppointmentUpdated($appointment, 'cancel'));
+
+        return back()->with('success', 'Appointment rejected.');
     }
 }

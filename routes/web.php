@@ -13,6 +13,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controller\StripeController;
 use App\Http\Controller\AdminController;
 use App\Http\Controllers\StripePortalController;
+use App\Http\Controller\DoctorController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -96,6 +97,10 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/doctor/dashboard', [DoctorController::class, 'dashboard'])->name('doctor.dashboard');
 
+    Route::post('/doctor/approve/{id}', [DoctorController::class, 'approve'])->name('doctor.approve');
+
+    Route::post('/doctor/reject/{id}', [DoctorController::class, 'reject'])->name('doctor.reject');
+
     Route::post('/doctor/appointment/{id}/status', [DoctorController::class, 'updateStatus'])->name('doctor.appointment.status');
 
   
@@ -147,7 +152,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/appointments/{id}/reschedule', [AppointmentController::class, 'rescheduleForm'])->name('appointments.reschedule.form');
 
-        Route::post('/appointments/{id}/rechedule', [AppointmentController::class, 'reschedule'])->name('appointments.reschedule');
+        Route::post('/appointments/{id}/reschedule', [AppointmentController::class, 'reschedule'])->name('appointments.reschedule');
     });
 
     /*
