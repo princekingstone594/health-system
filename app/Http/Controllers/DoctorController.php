@@ -61,4 +61,33 @@ class DoctorController extends Controller
 
         return back()->with('success', 'Appointment updated.');
     }
+
+    public function calenda()
+    {
+        $doctorId = auth()->id();
+
+        $appointments = \App\Models\Appointment::where('doctor_id', $doctorId)
+            ->get()
+            ->map(function ($appt) {
+                return[
+                    'title' => 'Patient #' . $user_id,
+                    'start' => $appt->date . 'T' . $appt->time,
+                    'color' => $this->getStatusColor($appt->status),
+                ];
+            });
+        return view('doctor.calendar', compact('appointments'));
+    }
+
+    /**
+     * Color by status
+     */
+    private function getStatusColor($status)
+    {
+        return match ($status) {
+            'approved' => '#16a34a', // green
+            'pending' => '#f59e0b', // yellow
+            'cancelled' => '#dc2626', // red
+            'default' => '#3b82f6', // blue
+        };
+    }
 }

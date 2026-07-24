@@ -168,7 +168,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/doctor/dashboard', [DoctorController::class, 'dashboard'])->name('doctor.dashboard');
 
         Route::past('/doctor/appointments/{id}/status', [DoctorController::class, 'updateStatus'])->name('doctor.appointment.status');
+
+        Route::get('/doctor/calendar', [DoctorController::class, 'calendar'])->name('doctor.calendar');
     });
+    
 });
 
 require __DIR__.'/auth.php';
