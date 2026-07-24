@@ -94,6 +94,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/doctor/availability', [DoctorAvailabilityController::class, 'index']);
     Route::post('/doctor/availability', [DoctorAvailabilityController::class, 'store']);
 
+    Route::get('/doctor/dashboard', [DoctorController::class, 'dashboard'])->name('doctor.dashboard');
+
+    Route::post('/doctor/appointment/{id}/status', [DoctorController::class, 'updateStatus'])->name('doctor.appointment.status');
+
   
     /*
     |--------------------------------------------------------------------------
@@ -158,6 +162,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/test-sms', [DashboardController::class, 'testSms']);
 
         Route::resource('schedules', ScheduleController::class);
+    });
+
+    Route::middleware(['auth', 'doctor'])->group(function () {
+        Route::get('/doctor/dashboard', [DoctorController::class, 'dashboard'])->name('doctor.dashboard');
+
+        Route::past('/doctor/appointments/{id}/status', [DoctorController::class, 'updateStatus'])->name('doctor.appointment.status');
     });
 });
 

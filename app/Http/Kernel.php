@@ -35,6 +35,7 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
+        
     ];
 
     /**
@@ -49,4 +50,9 @@ class Kernel extends HttpKernel
         'check.subsription' => \App\Http\Middleware\CheckSubscription::class,
         'admin' => \App\Http\Middleware\AdminMiddleware::class,
     ];
+
+    protected $routeMiddleware = [
+        // ...
+        'doctor' => \App\Http\Middleware\DoctorMiddleware::class,
+    ]
 }

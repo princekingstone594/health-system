@@ -53,7 +53,7 @@ class AppointmentController extends Controller
 
         // ✅ Save appointment
         Appointment::create([
-            'user_id' => auth()->id(),
+            'patient_id' => auth()->id(),
             'doctor_id' => $doctorId,
             'date' => $date,
             'time' => $time,
