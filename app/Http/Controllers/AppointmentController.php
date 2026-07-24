@@ -144,6 +144,14 @@ class AppointmentController extends Controller
         $appointment->status = 'cancelled';
         $appointment->save();
 
+        //🔔 Notify patient
+        $appointment->user->notify(new AppointmentUpdated($appointment, 'cancel'));
+
+        // 🔔 Notify doctor
+        if ($appointment->doctor && $appointment->doctor->user) {
+            $appointment->doctor->user->notify(new AppointmentUpdated($appointment, 'cancel'));
+        }
+
         return back()->with('success', 'Appointment cancelled.');
     }
 
@@ -186,6 +194,14 @@ class AppointmentController extends Controller
        $appointment->time = $request->time;
        $appointment->status = 'pending'; // re-approval
        $appointment->save();
+
+       // 🔔 Notify patient
+       $appointment->user->notify(new AppointmentUpdated($appointment, 'reschedule'));
+
+       // 🔔 Notify doctor
+       if ($appointment->doctor && $appointment->doctor->user) {
+        $appointment->doctor->user->notify(new AppointmentUpdated($appointment, 'reschedule'));
+       }
 
        return redirect()->route('patient.dashboard')
           ->with('success', 'Appointment rescheduled.');
