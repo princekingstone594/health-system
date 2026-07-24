@@ -131,4 +131,63 @@ class AppointmentController extends Controller
 
         return response()->json($slots);
     }
+
+    public function cancel($id)
+    {
+        $appointment = Appointment::findOrFail($id);
+
+        // Ensure patient owns it
+        if ($appointment->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $appointment->status = 'cancelled';
+        $appointment->save();
+
+        return back()->with('success', 'Appointment cancelled.');
+    }
+
+    public function rescheduleForm($id)
+    {
+        $appointment = Appointment::findOfFail($id);
+
+        if ($appointment->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        return view('appointment.reschedule', compact('appointment'));
+    }
+
+    public function reschedule(Request $request, $id)
+   {
+      $appointment = Appointment::findOrFail($id);
+
+      if ($appointment->user_id !== auth()->id()) {
+          abort(403);
+      }
+
+      $request->validate([
+         'date' => 'required|date',
+         'time' => 'required',
+      ]);
+
+      // 🚫 Prevent double booking
+      $exists = Appointment::where('doctor_id', $appointment->doctor_id)
+         ->where('date', $request->date)
+         ->where('time', $request->time)
+         ->where('id', '!=', $appointment->id)
+         ->exists();
+
+       if ($exists) {
+          return back()->with('error', 'Selected slot already taken.');
+       }
+
+       $appointment->date = $request->date;
+       $appointment->time = $request->time;
+       $appointment->status = 'pending'; // re-approval
+       $appointment->save();
+
+       return redirect()->route('patient.dashboard')
+          ->with('success', 'Appointment rescheduled.');
+   }
 }

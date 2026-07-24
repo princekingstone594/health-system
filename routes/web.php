@@ -142,6 +142,12 @@ Route::middleware(['auth'])->group(function () {
         // ✅ AJAX create (calendar)
         Route::post('/appointments/ajax-store', [AppointmentController::class, 'ajaxStore'])
             ->name('appointments.ajax.store');
+
+        Route::post('/appointments/{id}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
+
+        Route::get('/appointments/{id}/reschedule', [AppointmentController::class, 'rescheduleForm'])->name('appointments.reschedule.form');
+
+        Route::post('/appointments/{id}/rechedule', [AppointmentController::class, 'reschedule'])->name('appointments.reschedule');
     });
 
     /*
@@ -167,11 +173,14 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['auth', 'doctor'])->group(function () {
         Route::get('/doctor/dashboard', [DoctorController::class, 'dashboard'])->name('doctor.dashboard');
 
-        Route::past('/doctor/appointments/{id}/status', [DoctorController::class, 'updateStatus'])->name('doctor.appointment.status');
+        Route::post('/doctor/appointments/{id}/status', [DoctorController::class, 'updateStatus'])->name('doctor.appointment.status');
 
         Route::get('/doctor/calendar', [DoctorController::class, 'calendar'])->name('doctor.calendar');
     });
     
+    Route::middleware(['auth', 'patient'])->group(function () {
+        Route::get('/patient/dashboard', [PatientDashboardController::class, 'index'])->name('patient.dashboard');
+    });
 });
 
 require __DIR__.'/auth.php';
