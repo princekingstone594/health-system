@@ -13,4 +13,9 @@ class DoctorAvailability extends Model
         'end_time',
         'slot_duration',
     ];
+
+    public function doctor()
+    {
+        return $this->belongsTo(Doctor::class);
+    }
 }

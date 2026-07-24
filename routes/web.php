@@ -92,8 +92,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/billing/portal', [StripePortalController::class, 'portal'])->name('billing.portal');
 
-    Route::get('/doctor/availability', [DoctorAvailabilityController::class, 'index']);
-    Route::post('/doctor/availability', [DoctorAvailabilityController::class, 'store']);
+    Route::get('/doctor/availability', [DoctorAvailabilityController::class, 'index'])->name('doctor.availability');
+    Route::post('/doctor/availability', [DoctorAvailabilityController::class, 'store'])->name('doctor.availability.store');
 
     Route::get('/doctor/dashboard', [DoctorController::class, 'dashboard'])->name('doctor.dashboard');
 

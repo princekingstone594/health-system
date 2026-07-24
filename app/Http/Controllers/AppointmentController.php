@@ -10,6 +10,19 @@ use Carbon\Carbon;
 class AppointmentController extends Controller
 {
     /**
+     * List user appointments
+     */
+    public function index()
+    {
+        $appointments = Appointment::where('user_id', auth()->id())
+            ->with('doctor')
+            ->latest()
+            ->get();
+
+        return view('appointments.index', compact('appointments'));
+    }
+
+    /**
      * Show booking page
      */
     public function create(Request $request)
@@ -27,7 +40,7 @@ class AppointmentController extends Controller
     }
 
     /**
-     * Store appointment (BOOKING LOGIC)
+     * Store appointment
      */
     public function store(Request $request)
     {
@@ -40,9 +53,8 @@ class AppointmentController extends Controller
         $doctorId = $request->doctor_id;
         $date = $request->date;
         $time = $request->time;
-        $appointment->status = 'pending';
 
-        // 🚫 STEP 8 — Prevent double booking
+        // 🚫 Prevent double booking
         $exists = Appointment::where('doctor_id', $doctorId)
             ->where('date', $date)
             ->where('time', $time)
@@ -52,9 +64,9 @@ class AppointmentController extends Controller
             return back()->with('error', 'Time slot already booked.');
         }
 
-        // ✅ Save appointment
+        // ✅ Save appointment (default = pending)
         Appointment::create([
-            'patient_id' => auth()->id(),
+            'user_id' => auth()->id(), // ✅ patient
             'doctor_id' => $doctorId,
             'date' => $date,
             'time' => $time,
@@ -62,20 +74,19 @@ class AppointmentController extends Controller
         ]);
 
         return redirect()->route('appointments.index')
-            ->with('success', 'Appointment booked successfully.');
+            ->with('success', 'Appointment booked. Waiting for doctor approval.');
     }
 
     /**
-     * STEP 7 — Generate slots from availability
-     * STEP 9 — Remove already booked slots
+     * Generate available slots
      */
     public function getAvailableSlots($doctorId, $date)
     {
         $day = strtolower(Carbon::parse($date)->format('l'));
 
-        // Get doctor's availability for that day
+        // Get doctor's availability
         $availability = DoctorAvailability::where('doctor_id', $doctorId)
-            ->where('day', $day)
+            ->where('day_of_week', $day)
             ->first();
 
         if (!$availability) {
@@ -84,127 +95,90 @@ class AppointmentController extends Controller
 
         $start = Carbon::parse($availability->start_time);
         $end = Carbon::parse($availability->end_time);
+        $duration = $availability->slot_duration;
 
         $slots = [];
 
-        // ⏱ STEP 7 — Generate 30-min slots
         while ($start < $end) {
             $slots[] = $start->format('H:i');
-            $start->addMinutes(30);
+            $start->addMinutes($duration);
         }
 
-        // 📦 STEP 9 — Get booked slots
+        // 🚫 Remove already booked slots
         $booked = Appointment::where('doctor_id', $doctorId)
             ->where('date', $date)
             ->pluck('time')
             ->toArray();
 
-        // 🚫 Remove booked slots
-        $availableSlots = array_filter($slots, function ($slot) use ($booked) {
-            return !in_array($slot, $booked);
-        });
-
-        return array_values($availableSlots);
+        return array_values(array_diff($slots, $booked));
     }
 
     /**
-     * List user appointments
+     * Cancel appointment
      */
-    public function index()
-    {
-        $appointments = Appointment::where('user_id', auth()->id())
-            ->latest()
-            ->get();
-
-        return view('appointments.index', compact('appointments'));
-    }
-
-    public function slots(Request  $request)
-    {
-        $doctorId = $request->doctor_id;
-        $date = $request->date;
-
-        if (!$doctorId || !$date) {
-            return response()->json([]);
-        }
-
-        $slots = $this->getAvailableSlots($doctorId, $date);
-
-        return response()->json($slots);
-    }
-
     public function cancel($id)
     {
         $appointment = Appointment::findOrFail($id);
 
-        // Ensure patient owns it
         if ($appointment->user_id !== auth()->id()) {
             abort(403);
         }
 
-        $appointment->status = 'cancelled';
-        $appointment->save();
-
-        //🔔 Notify patient
-        $appointment->user->notify(new AppointmentUpdated($appointment, 'cancel'));
-
-        // 🔔 Notify doctor
-        if ($appointment->doctor && $appointment->doctor->user) {
-            $appointment->doctor->user->notify(new AppointmentUpdated($appointment, 'cancel'));
-        }
+        $appointment->update([
+            'status' => 'cancelled'
+        ]);
 
         return back()->with('success', 'Appointment cancelled.');
     }
 
+    /**
+     * Show reschedule form
+     */
     public function rescheduleForm($id)
     {
-        $appointment = Appointment::findOfFail($id);
+        $appointment = Appointment::findOrFail($id);
 
         if ($appointment->user_id !== auth()->id()) {
             abort(403);
         }
 
-        return view('appointment.reschedule', compact('appointment'));
+        return view('appointments.reschedule', compact('appointment'));
     }
 
+    /**
+     * Save reschedule
+     */
     public function reschedule(Request $request, $id)
-   {
-      $appointment = Appointment::findOrFail($id);
+    {
+        $appointment = Appointment::findOrFail($id);
 
-      if ($appointment->user_id !== auth()->id()) {
-          abort(403);
-      }
+        if ($appointment->user_id !== auth()->id()) {
+            abort(403);
+        }
 
-      $request->validate([
-         'date' => 'required|date',
-         'time' => 'required',
-      ]);
+        $request->validate([
+            'date' => 'required|date',
+            'time' => 'required',
+        ]);
 
-      // 🚫 Prevent double booking
-      $exists = Appointment::where('doctor_id', $appointment->doctor_id)
-         ->where('date', $request->date)
-         ->where('time', $request->time)
-         ->where('id', '!=', $appointment->id)
-         ->exists();
+        // 🚫 Prevent double booking
+        $exists = Appointment::where('doctor_id', $appointment->doctor_id)
+            ->where('date', $request->date)
+            ->where('time', $request->time)
+            ->where('id', '!=', $appointment->id)
+            ->exists();
 
-       if ($exists) {
-          return back()->with('error', 'Selected slot already taken.');
-       }
+        if ($exists) {
+            return back()->with('error', 'Time slot already booked.');
+        }
 
-       $appointment->date = $request->date;
-       $appointment->time = $request->time;
-       $appointment->status = 'pending'; // re-approval
-       $appointment->save();
+        $appointment->update([
+            'date' => $request->date,
+            'time' => $request->time,
+            'status' => 'pending', // 🔁 needs re-approval
+        ]);
 
-       // 🔔 Notify patient
-       $appointment->user->notify(new AppointmentUpdated($appointment, 'reschedule'));
-
-       // 🔔 Notify doctor
-       if ($appointment->doctor && $appointment->doctor->user) {
-        $appointment->doctor->user->notify(new AppointmentUpdated($appointment, 'reschedule'));
-       }
-
-       return redirect()->route('patient.dashboard')
-          ->with('success', 'Appointment rescheduled.');
-   }
+        return redirect()->route('patient.dashboard')
+            ->with('success', 'Appointment rescheduled. Awaiting approval.');
+    }
 }
