@@ -73,6 +73,8 @@ Route::middleware(['auth'])->group(function () {
      
     Route::get('/admin/revenue', [AdminController::class, 'revenue'])->name('admin.revenue');
 
+    Route::get('/admin/dashboard', [AdminCpntroller::class, 'dashboard'])->name('admin.dashboard');
+
     Route::get('/plans', [SubscriptionController::class, 'plans'])->name('plans');
 
     Route::get('/subscribe/{plan}', [SubscriptionController::class, 'subscribe'])->name('subscribe');
