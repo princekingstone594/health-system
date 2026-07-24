@@ -69,7 +69,22 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/stripe/webhook', [StripeController::class, 'webhook']);
      
     Route::get('/admin/revenue', [AdminController::class, 'revenue'])->name('admin.revenue');
-    
+
+    Route::get('/plans', [SubscriptionController::class, 'plans'])->name('plans');
+
+    Route::get('/subscribe/{plan}', [SubscriptionController::class, 'subscribe'])->name('subscribe');
+
+    Route::get('/subscription/success', [SubscriptionController::class, 'success'])->name('subscription.success');
+
+    Route::get('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subsription.cancel');
+
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    });
+
+    Route::resource('appointments', AppointmentController::class);
+
+  
     /*
     |--------------------------------------------------------------------------
     | PATIENT MANAGEMENT

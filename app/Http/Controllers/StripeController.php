@@ -145,5 +145,22 @@ class StripeController extends Controller
         }
 
         return response('Webhook handled', 200);
+
+        if($event->type === 'checkout.session.completed') {
+            
+
+           $session = $event->data->object;
+
+           $appointmentId = $session->metadata->appointment_id ?? null;
+
+           if ($appointmentId) {
+               $appointment = \App\Models\Appointment::find($appointmentId);
+
+               if ($appointment && $appointment->payment_status !== 'paid') {
+                   $appointment->payment_status = 'paid';
+                   $appointment->save();
+               }
+           }
+        }
     }
 }
