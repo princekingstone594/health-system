@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Appointment;
 use App\Models\DoctorAvailability;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 
 class AppointmentController extends Controller
 {
@@ -40,7 +42,7 @@ class AppointmentController extends Controller
     }
 
     /**
-     * Store appointment
+     * Store appointment (RACE CONDITION SAFE)
      */
     public function store(Request $request)
     {
@@ -54,26 +56,50 @@ class AppointmentController extends Controller
         $date = $request->date;
         $time = $request->time;
 
-        // 🚫 Prevent double booking
-        $exists = Appointment::where('doctor_id', $doctorId)
-            ->where('date', $date)
-            ->where('time', $time)
-            ->exists();
-
-        if ($exists) {
-            return back()->with('error', 'Time slot already booked.');
+        // 🚫 Prevent past booking
+        if (Carbon::parse($date . ' ' . $time)->lt(now())) {
+            return back()->with('error', 'Cannot book past time.');
         }
 
-        Appointment::create([
-            'user_id' => auth()->id(),
-            'doctor_id' => $doctorId,
-            'date' => $date,
-            'time' => $time,
-            'status' => 'pending',
-        ]);
+        try {
+            DB::beginTransaction();
 
-        return redirect()->route('appointments.index')
-            ->with('success', 'Appointment booked. Waiting for doctor approval.');
+            // 🔒 Lock rows for this doctor & date
+            $exists = Appointment::where('doctor_id', $doctorId)
+                ->where('date', $date)
+                ->where('time', $time)
+                ->lockForUpdate()
+                ->exists();
+
+            if ($exists) {
+                DB::rollBack();
+                return back()->with('error', 'Time slot already booked.');
+            }
+
+            Appointment::create([
+                'user_id' => auth()->id(),
+                'doctor_id' => $doctorId,
+                'date' => $date,
+                'time' => $time,
+                'status' => 'pending',
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('appointments.index')
+                ->with('success', 'Appointment booked. Waiting for doctor approval.');
+
+        } catch (QueryException $e) {
+
+            DB::rollBack();
+
+            // 🔥 Handle DB unique constraint
+            if ($e->getCode() == 23000) {
+                return back()->with('error', 'Slot already taken. Please choose another.');
+            }
+
+            throw $e;
+        }
     }
 
     /**
@@ -100,7 +126,7 @@ class AppointmentController extends Controller
 
         while ($start < $end) {
 
-            // 🚫 Skip past times IF selected date is today
+            // 🚫 Skip past times (only today)
             if (Carbon::parse($date)->isToday() && $start->lt($now)) {
                 $start->addMinutes($duration);
                 continue;
@@ -110,7 +136,7 @@ class AppointmentController extends Controller
             $start->addMinutes($duration);
         }
 
-        // 🚫 Remove already booked slots
+        // 🚫 Remove booked slots
         $booked = Appointment::where('doctor_id', $doctorId)
             ->where('date', $date)
             ->pluck('time')
@@ -152,7 +178,7 @@ class AppointmentController extends Controller
     }
 
     /**
-     * Save reschedule
+     * Save reschedule (RACE CONDITION SAFE)
      */
     public function reschedule(Request $request, $id)
     {
@@ -167,25 +193,47 @@ class AppointmentController extends Controller
             'time' => 'required',
         ]);
 
-        // 🚫 Prevent double booking
-        $exists = Appointment::where('doctor_id', $appointment->doctor_id)
-            ->where('date', $request->date)
-            ->where('time', $request->time)
-            ->where('id', '!=', $appointment->id)
-            ->exists();
-
-        if ($exists) {
-            return back()->with('error', 'Time slot already booked.');
+        // 🚫 Prevent past booking
+        if (Carbon::parse($request->date . ' ' . $request->time)->lt(now())) {
+            return back()->with('error', 'Cannot select past time.');
         }
 
-        $appointment->update([
-            'date' => $request->date,
-            'time' => $request->time,
-            'status' => 'pending',
-        ]);
+        try {
+            DB::beginTransaction();
 
-        return redirect()->route('patient.dashboard')
-            ->with('success', 'Appointment rescheduled. Awaiting approval.');
+            $exists = Appointment::where('doctor_id', $appointment->doctor_id)
+                ->where('date', $request->date)
+                ->where('time', $request->time)
+                ->where('id', '!=', $appointment->id)
+                ->lockForUpdate()
+                ->exists();
+
+            if ($exists) {
+                DB::rollBack();
+                return back()->with('error', 'Time slot already booked.');
+            }
+
+            $appointment->update([
+                'date' => $request->date,
+                'time' => $request->time,
+                'status' => 'pending',
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('patient.dashboard')
+                ->with('success', 'Appointment rescheduled. Awaiting approval.');
+
+        } catch (QueryException $e) {
+
+            DB::rollBack();
+
+            if ($e->getCode() == 23000) {
+                return back()->with('error', 'Slot already taken.');
+            }
+
+            throw $e;
+        }
     }
 
     /**
@@ -196,7 +244,6 @@ class AppointmentController extends Controller
         $doctorId = $request->doctor_id;
         $date = $request->date;
 
-        // ✅ FIXED BUG HERE (missing $)
         if (!$doctorId || !$date) {
             return response()->json([]);
         }
