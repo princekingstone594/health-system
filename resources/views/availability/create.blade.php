@@ -6,20 +6,34 @@
         <form method="POST" action="{{ route('availability.store') }}">
             @csrf
 
-            <select name="day" class="w-full mb-3 border p-2">
-                <option>Monday</option>
-                <option>Tuesday</option>
-                <option>Wednesday</option>
-                <option>Thursday</option>
-                <option>Friday</option>
+            <!-- Day -->
+            <select name="day_of_week" class="w-full mb-3 border p-2 rounded">
+                <option value="monday">Monday</option>
+                <option value="tuesday">Tuesday</option>
+                <option value="wednesday">Wednesday</option>
+                <option value="thursday">Thursday</option>
+                <option value="friday">Friday</option>
+                <option value="saturday">Saturday</option>
+                <option value="sunday">Sunday</option>
             </select>
 
-            <input type="time" name="start_time" class="w-full mb-3 border p-2">
-            <input type="time" name="end_time" class="w-full mb-3 border p-2">
+            <!-- Start -->
+            <input type="time" name="start_time"
+                   class="w-full mb-3 border p-2 rounded">
 
-            <input type="number" name="slot_duration" placeholder="Slot (minutes)" class="w-full mb-3 border p-2" value="30">
+            <!-- End -->
+            <input type="time" name="end_time"
+                   class="w-full mb-3 border p-2 rounded">
 
-            <button class="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
+            <!-- Slot duration -->
+            <input type="number" name="slot_duration"
+                   placeholder="Slot duration (minutes)"
+                   class="w-full mb-3 border p-2 rounded"
+                   value="30">
+
+            <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                Save Availability
+            </button>
 
         </form>
     </div>

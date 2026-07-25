@@ -64,9 +64,8 @@ class AppointmentController extends Controller
             return back()->with('error', 'Time slot already booked.');
         }
 
-        // ✅ Save appointment (default = pending)
         Appointment::create([
-            'user_id' => auth()->id(), // ✅ patient
+            'user_id' => auth()->id(),
             'doctor_id' => $doctorId,
             'date' => $date,
             'time' => $time,
@@ -84,7 +83,6 @@ class AppointmentController extends Controller
     {
         $day = strtolower(Carbon::parse($date)->format('l'));
 
-        // Get doctor's availability
         $availability = DoctorAvailability::where('doctor_id', $doctorId)
             ->where('day_of_week', $day)
             ->first();
@@ -95,11 +93,19 @@ class AppointmentController extends Controller
 
         $start = Carbon::parse($availability->start_time);
         $end = Carbon::parse($availability->end_time);
-        $duration = $availability->slot_duration;
+        $duration = $availability->slot_duration ?? 30;
 
         $slots = [];
+        $now = Carbon::now();
 
         while ($start < $end) {
+
+            // 🚫 Skip past times IF selected date is today
+            if (Carbon::parse($date)->isToday() && $start->lt($now)) {
+                $start->addMinutes($duration);
+                continue;
+            }
+
             $slots[] = $start->format('H:i');
             $start->addMinutes($duration);
         }
@@ -175,19 +181,23 @@ class AppointmentController extends Controller
         $appointment->update([
             'date' => $request->date,
             'time' => $request->time,
-            'status' => 'pending', // 🔁 needs re-approval
+            'status' => 'pending',
         ]);
 
         return redirect()->route('patient.dashboard')
             ->with('success', 'Appointment rescheduled. Awaiting approval.');
     }
 
+    /**
+     * AJAX: Load slots
+     */
     public function slots(Request $request)
     {
         $doctorId = $request->doctor_id;
         $date = $request->date;
 
-        if (!doctorId || !$date) {
+        // ✅ FIXED BUG HERE (missing $)
+        if (!$doctorId || !$date) {
             return response()->json([]);
         }
 
