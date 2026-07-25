@@ -23,25 +23,21 @@
 
             <!-- Patient -->
             <div class="mb-4">
-                <label class="block mb-1">Select Patient</label>
-                <select name="patient_id" class="w-full border rounded px-3 py-2">
-                    @foreach($patients as $p)
-                        <option value="{{ $p->id }}"
-                            {{ (isset($patient) && $patient->id == $p->id) || old('patient_id') == $p->id ? 'selected' : '' }}>
-                            {{ $p->name }}
-                        </option>
-                    @endforeach
-                </select>
+                <label class="block mb-1">Patient</label>
+                <input type="text"
+                       value="{{ auth()->user()->name }}"
+                       class="w-full border rounded px-3 py-2 bg-gray-100"
+                       disabled>
             </div>
 
             <!-- Doctor -->
             <div class="mb-4">
                 <label class="block mb-1">Select Doctor</label>
-                <select name="doctor_id" id="doctor" class="w-full border rounded px-3 py-2">
-                    <option value="">Select Doctor</option>
-                    @foreach($doctors as $doctor)
-                        <option value="{{ $doctor->id }}" {{ old('doctor_id') == $doctor->id ? 'selected' : '' }}>
-                            {{ $doctor->name }}
+                <select name="doctor_id" id="doctor_id" class="w-full border rounded px-3 py-2">
+                    <option value="">-- Select Doctor --</option>
+                    @foreach(\App\Models\User::where('role','doctor')->get() as $doctor)
+                        <option value="{{ $doctor->id }}">
+                            Dr. {{ $doctor->name }}
                         </option>
                     @endforeach
                 </select>
@@ -49,74 +45,94 @@
 
             <!-- Date -->
             <div class="mb-4">
-                <label class="block mb-1">Appointment Date</label>
+                <label class="block mb-1">Select Date</label>
                 <input type="date"
                        name="date"
                        id="date"
-                       value="{{ old('date') }}"
-                       class="border p-2 w-full"
-                       required>
+                       class="w-full border rounded px-3 py-2">
             </div>
 
-            <!-- Time -->
+            <!-- Slots -->
             <div class="mb-4">
-                <label class="block mb-1">Time Slot</label>
-                <select name="time" id="time" class="border p-2 w-full" required>
-                    <option value="">Select Time</option>
-                    @foreach($timeslots ?? [] as $slot)
-                        <option value="{{ $slot }}">{{ $slot }}</option>
-                    @endforeach
-                </select>
+                <label class="block mb-1">Available Time Slots</label>
+
+                <div id="slots-container" class="grid grid-cols-3 gap-2">
+                    <p class="text-gray-500 text-sm col-span-3">
+                        Select doctor & date to load slots
+                    </p>
+                </div>
             </div>
 
-            <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            <!-- Submit -->
+            <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">
                 Book Appointment
             </button>
 
         </form>
     </div>
-</x-app-layout>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
+    <!-- 🧠 AJAX SCRIPT -->
+    <script>
+        const doctorSelect = document.getElementById('doctor_id');
+        const dateInput = document.getElementById('date');
+        const slotsContainer = document.getElementById('slots-container');
 
-    const doctorSelect = document.getElementById('doctor');
-    const dateInput = document.getElementById('date');
-    const timeSelect = document.getElementById('time');
+        function loadSlots() {
+            const doctorId = doctorSelect.value;
+            const date = dateInput.value;
 
-    function fetchSlots() {
-        const doctorId = doctorSelect.value;
-        const date = dateInput.value;
+            if (!doctorId || !date) {
+                slotsContainer.innerHTML = `
+                    <p class="text-gray-500 text-sm col-span-3">
+                        Select doctor & date to load slots
+                    </p>`;
+                return;
+            }
 
-        if (!doctorId || !date) return;
+            slotsContainer.innerHTML = `<p class="text-blue-500 col-span-3">Loading...</p>`;
 
-        // Loading state
-        timeSelect.innerHTML = '<option>Loading...</option>';
+            fetch(`/appointments/slots?doctor_id=${doctorId}&date=${date}`)
+                .then(res => res.json())
+                .then(data => {
+                    slotsContainer.innerHTML = '';
 
-        fetch(`/appointments/slots?doctor_id=${doctorId}&date=${date}`)
-            .then(res => res.json())
-            .then(slots => {
+                    if (data.length === 0) {
+                        slotsContainer.innerHTML = `
+                            <p class="text-red-500 text-sm col-span-3">
+                                No available slots
+                            </p>`;
+                        return;
+                    }
 
-                timeSelect.innerHTML = '<option value="">Select Time</option>';
+                    data.forEach(slot => {
+                        const label = document.createElement('label');
+                        label.className = "border rounded px-2 py-2 text-center cursor-pointer hover:bg-blue-50";
 
-                if (slots.length === 0) {
-                    timeSelect.innerHTML = '<option>No available slots</option>';
-                    return;
-                }
+                        label.innerHTML = `
+                            <input type="radio" name="time" value="${slot}" class="hidden">
+                            <span>${slot}</span>
+                        `;
 
-                slots.forEach(slot => {
-                    let option = document.createElement('option');
-                    option.value = slot;
-                    option.textContent = slot;
-                    timeSelect.appendChild(option);
+                        label.addEventListener('click', () => {
+                            document.querySelectorAll('#slots-container label')
+                                .forEach(l => l.classList.remove('bg-blue-100', 'border-blue-500'));
+
+                            label.classList.add('bg-blue-100', 'border-blue-500');
+                        });
+
+                        slotsContainer.appendChild(label);
+                    });
+                })
+                .catch(() => {
+                    slotsContainer.innerHTML = `
+                        <p class="text-red-500 text-sm col-span-3">
+                            Failed to load slots
+                        </p>`;
                 });
-            })
-            .catch(() => {
-                timeSelect.innerHTML = '<option>Error loading slots</option>';
-            });
-    }
+        }
 
-    doctorSelect.addEventListener('change', fetchSlots);
-    dateInput.addEventListener('change', fetchSlots);
-});
-</script>
+        doctorSelect.addEventListener('change', loadSlots);
+        dateInput.addEventListener('change', loadSlots);
+    </script>
+
+</x-app-layout>

@@ -103,6 +103,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/doctor/appointment/{id}/status', [DoctorController::class, 'updateStatus'])->name('doctor.appointment.status');
 
+    Route::get('/appointment/slots', [AppointmentController::class, 'slots'])->name('appointment.slots');
+
   
     /*
     |--------------------------------------------------------------------------

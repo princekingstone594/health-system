@@ -181,4 +181,18 @@ class AppointmentController extends Controller
         return redirect()->route('patient.dashboard')
             ->with('success', 'Appointment rescheduled. Awaiting approval.');
     }
+
+    public function slots(Request $request)
+    {
+        $doctorId = $request->doctor_id;
+        $date = $request->date;
+
+        if (!doctorId || !$date) {
+            return response()->json([]);
+        }
+
+        $slots = $this->getAvailableSlots($doctorId, $date);
+
+        return response()->json($slots);
+    }
 }
