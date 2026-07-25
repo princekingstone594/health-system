@@ -252,4 +252,46 @@ class AppointmentController extends Controller
 
         return response()->json($slots);
     }
+
+    public function calendarEvent(Request $request)
+    {
+        $doctorId = $request->doctor_id;
+        $start = Carbon::parse($request->start);
+        $end = Carbon::parse($request->end);
+
+        $event = [];
+
+        while ($start <= $end) {
+            $date = $start->format('Y-m-d');
+            $slots = $this->getAvailableSlots($doctorId, $date);
+
+            foreach ($slots as $time) {
+                
+                $events[] = [
+                    'title' => 'Available',
+                    'start' => $date . 'T' . $time,
+                    'color' => 'green',
+                    'booked' => false,
+                ];
+            }
+
+            // 🔴 Add booked slots
+            $booked = Appointment::where('doctor_id', $doctorId)
+                 ->where('date', $date)
+                 ->get();
+
+            foreach ($booked as $b) {
+                $events[] = [
+                    'title' => 'Booked',
+                    'start' => $b->date . 'T' . $b->time,
+                    'color' => 'red',
+                    'booked' => true,
+                ];
+            }
+
+            $start->addday();
+        }
+
+        return response()->json($events);
+    }
 }
