@@ -77,4 +77,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(Doctor::class);
     }
+
+    public function reviewsReceived()
+    {
+        return $this->hasMany(Review::class, 'doctor_id');
+    }
+
+    public function reviewsGiven()
+    {
+        return $this->hasMany(Review::class, 'patient_id');
+    }
 }

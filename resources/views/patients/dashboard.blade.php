@@ -49,17 +49,15 @@
             @forelse($upcomingAppointments as $appt)
                 <div class="flex justify-between items-center border-b py-4">
 
-                    {{-- LEFT SIDE --}}
                     <div>
                         <p class="font-semibold">
                             Dr. {{ $appt->doctor->name ?? 'Doctor' }}
                         </p>
                         <p class="text-sm text-gray-500">
-                            {{ $appt->appointment_date }} at {{ $appt->appointment_time }}
+                            {{ $appt->date }} at {{ $appt->time }}
                         </p>
                     </div>
 
-                    {{-- RIGHT SIDE --}}
                     <div class="flex flex-col items-end gap-2">
 
                         {{-- Status --}}
@@ -83,11 +81,10 @@
                             </a>
                         @endif
 
-                        {{-- 🎯 ACTION BUTTONS --}}
+                        {{-- Actions --}}
                         @if($appt->status !== 'cancelled' && $appt->status !== 'completed')
                             <div class="flex gap-2 mt-1">
 
-                                {{-- ❌ Cancel --}}
                                 <form method="POST" action="{{ route('appointments.cancel', $appt->id) }}">
                                     @csrf
                                     <button
@@ -97,7 +94,6 @@
                                     </button>
                                 </form>
 
-                                {{-- 🔁 Reschedule --}}
                                 <a href="{{ route('appointments.reschedule.form', $appt->id) }}"
                                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs">
                                     Reschedule
@@ -113,30 +109,64 @@
             @endforelse
         </div>
 
-        {{-- 🕘 Recent Appointments --}}
+        {{-- 🕘 Recent Appointments + Reviews --}}
         <div class="bg-white p-6 rounded shadow">
             <h3 class="text-lg font-semibold mb-4">Recent History</h3>
 
             @forelse($pastAppointments as $appt)
-                <div class="flex justify-between items-center border-b py-3">
+                <div class="border-b py-4">
 
-                    <div>
-                        <p class="font-semibold">
-                            Dr. {{ $appt->doctor->name ?? 'Doctor' }}
-                        </p>
-                        <p class="text-sm text-gray-500">
-                            {{ $appt->appointment_date }} at {{ $appt->appointment_time }}
-                        </p>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-semibold">
+                                Dr. {{ $appt->doctor->name ?? 'Doctor' }}
+                            </p>
+                            <p class="text-sm text-gray-500">
+                                {{ $appt->date }} at {{ $appt->time }}
+                            </p>
+                        </div>
+
+                        <span class="text-sm capitalize
+                            @if($appt->status == 'cancelled') text-red-500
+                            @elseif($appt->status == 'completed') text-green-500
+                            @else text-gray-600
+                            @endif
+                        ">
+                            {{ $appt->status }}
+                        </span>
                     </div>
 
-                    <span class="text-sm capitalize
-                        @if($appt->status == 'cancelled') text-red-500
-                        @elseif($appt->status == 'completed') text-green-500
-                        @else text-gray-600
-                        @endif
-                    ">
-                        {{ $appt->status }}
-                    </span>
+                    {{-- ⭐ REVIEW FORM --}}
+                    @php
+                        $alreadyReviewed = \App\Models\Review::where('appointment_id', $appt->id)->exists();
+                    @endphp
+
+                    @if($appt->status === 'approved' && now()->gt($appt->date) && !$alreadyReviewed)
+                        <form method="POST" action="{{ route('reviews.store') }}" class="mt-3 flex items-center gap-2">
+                            @csrf
+
+                            <input type="hidden" name="appointment_id" value="{{ $appt->id }}">
+
+                            <select name="rating" class="border p-1 rounded" required>
+                                <option value="">Rate</option>
+                                <option value="5">⭐⭐⭐⭐⭐</option>
+                                <option value="4">⭐⭐⭐⭐</option>
+                                <option value="3">⭐⭐⭐</option>
+                                <option value="2">⭐⭐</option>
+                                <option value="1">⭐</option>
+                            </select>
+
+                            <input type="text" name="comment"
+                                   placeholder="Write a review..."
+                                   class="border p-1 rounded w-64">
+
+                            <button class="bg-green-600 text-white px-3 py-1 rounded text-sm">
+                                Submit
+                            </button>
+                        </form>
+                    @elseif($alreadyReviewed)
+                        <p class="text-green-600 text-sm mt-2">✅ You already reviewed this appointment</p>
+                    @endif
 
                 </div>
             @empty
