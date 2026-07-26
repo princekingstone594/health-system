@@ -107,6 +107,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/calendar/event', [AppointmentController::class, 'calendar'])->middle('auth');
 
+    Route::get('/calendar/events', [AppointmentController::class, 'calendarEvents'])->middleware('auth');
+
   
     /*
     |--------------------------------------------------------------------------

@@ -253,13 +253,13 @@ class AppointmentController extends Controller
         return response()->json($slots);
     }
 
-    public function calendarEvent(Request $request)
+    public function calendarEvents(Request $request)
     {
         $doctorId = $request->doctor_id;
         $start = Carbon::parse($request->start);
         $end = Carbon::parse($request->end);
 
-        $event = [];
+        $events = [];
 
         while ($start <= $end) {
             $date = $start->format('Y-m-d');
