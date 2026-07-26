@@ -8,7 +8,7 @@ use App\Models\User;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
 
-class StripeController extends Controller
+class StripePortalController extends Controller
 {
     /**
      * Create Checkout Session (Appointment Payment)

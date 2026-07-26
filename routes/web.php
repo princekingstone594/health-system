@@ -105,8 +105,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/appointment/slots', [AppointmentController::class, 'slots'])->name('appointment.slots');
 
-    Route::get('/calendar/event', [AppointmentController::class, 'calendar'])->middle('auth');
-
     Route::get('/calendar/events', [AppointmentController::class, 'calendarEvents'])->middleware('auth');
 
   

@@ -25,6 +25,14 @@
 
     </div>
 
+    {{-- ✅ FULLCALENDAR --}}
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+    {{-- ✅ PUSHER + ECHO --}}
+    <script src="https://js.pusher.com/7.2/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo/dist/echo.iife.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -35,7 +43,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const formTime = document.getElementById('form_time');
     const bookBtn = document.getElementById('bookBtn');
 
-    const calendar = new FullCalendar.Calendar(calendarEl, {
+    let calendar; // 🔥 MUST be global for Echo
+
+    // ✅ INIT CALENDAR
+    calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'timeGridWeek',
         selectable: true,
         nowIndicator: true,
@@ -66,7 +77,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             let date = info.event.startStr.split('T')[0];
-            let time = info.event.startStr.split('T')[1].substring(0,5);
+            let time = info.event.startStr.split('T')[1]?.substring(0,5);
+
+            if (!time) return;
 
             formDate.value = date;
             formTime.value = time;
@@ -79,6 +92,27 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     calendar.render();
+
+    // ✅ INIT ECHO (REAL-TIME)
+    const echo = new Echo({
+        broadcaster: 'pusher',
+        key: 'local',
+        wsHost: window.location.hostname,
+        wsPort: 6001,
+        forceTLS: false,
+        disableStats: true,
+    });
+
+    // ✅ LISTEN FOR SLOT UPDATES
+    echo.channel('doctor.' + doctorId)
+        .listen('SlotBooked', (e) => {
+
+            console.log("🔥 Real-time update received", e);
+
+            // 🔄 REFRESH EVENTS
+            calendar.refetchEvents();
+        });
+
 });
 </script>
 

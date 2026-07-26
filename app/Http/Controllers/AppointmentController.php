@@ -8,6 +8,7 @@ use App\Models\DoctorAvailability;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\QueryException;
+use App\Events\SlotBooked;
 
 class AppointmentController extends Controller
 {
@@ -86,6 +87,8 @@ class AppointmentController extends Controller
 
             DB::commit();
 
+            event(new SlotBooked($doctorId, $date));
+
             return redirect()->route('appointments.index')
                 ->with('success', 'Appointment booked. Waiting for doctor approval.');
 
@@ -159,6 +162,8 @@ class AppointmentController extends Controller
         $appointment->update([
             'status' => 'cancelled'
         ]);
+
+        event(new SlotBooked($appointment->doctor_id, $appointment->date));
 
         return back()->with('success', 'Appointment cancelled.');
     }
