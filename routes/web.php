@@ -109,6 +109,17 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/reviews', [ReviewController::class, 'store'])->middleware('auth')->name('reviews.store');
 
+    // Patient
+    Route::get('/records', [MedicalRecordController::class, 'index'])->name('records.index');
+    Route::get('/records/upload/{appointment}', [MedicalRecordController::class, 'create'])->name('records.create');
+    Route::post('/records/store', [MedicalRecordController::class, 'store'])->name('records.store');
+
+    // Doctor
+    Route::get('/doctor/patient-records/{patient}', [MedicalRecordController::class, 'doctorView'])->name('doctor.records');
+
+    // Download
+    Route::get('records/download/{id}', [MedicalRecordcontroller::class, 'download'])->name('records.download');
+
   
     /*
     |--------------------------------------------------------------------------
