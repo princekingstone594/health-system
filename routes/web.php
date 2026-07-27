@@ -15,6 +15,7 @@ use App\Http\Controller\AdminController;
 use App\Http\Controllers\StripePortalController;
 use App\Http\Controller\DoctorController;
 use App\Http\Controller\SymptomCheckerController;
+use App\Http\Controller\AiChatController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -124,6 +125,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/symptom-checker', [SymptomCheckerController::class, 'index'])->name('symptom.index');
 
     Route::post('/symptom-checker', [SymptomCheckerController::class, 'analyze'])->name('symptom.analyze');
+
+    Route::get('/ai-chat', [AiChatController::class, 'index'])->name('ai.chat');
+
+    Route::post('/ai-chat/send', [AiChatController::class, 'send']);
 
   
     /*
