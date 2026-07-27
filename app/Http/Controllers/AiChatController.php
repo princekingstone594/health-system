@@ -46,7 +46,7 @@ class AiChatController extends Controller
             ->values()
             ->toArray();
 
-        // 🤖 Call AI with structured instruction
+        // 🤖 AI Call (INTELLIGENT PROMPT)
         $response = Http::withToken(config('services.openai.key'))
             ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => 'gpt-4o-mini',
@@ -55,15 +55,17 @@ class AiChatController extends Controller
                         'role' => 'system',
                         'content' => 'You are a medical assistant.
 
-Ask follow-up questions if needed.
+First, ask follow-up questions if symptoms are unclear.
 
-When confident, respond in this format:
+ONLY when reasonably confident, respond in this format:
 
 Condition: ...
 Specialty: ...
 Urgency: Low/Medium/High
+Confidence: Low/Medium/High
 Advice: ...
-'
+
+If not confident, DO NOT include Specialty or Condition. Just ask questions.'
                     ]
                 ], $history),
             ]);
@@ -77,27 +79,39 @@ Advice: ...
             'role' => 'assistant'
         ]);
 
-        // 🧠 Extract specialty
+        // 🧠 Extract intelligence
         $specialty = null;
+        $urgency = null;
+        $confidence = null;
 
-        if (preg_match('/Specialty:\s*(.*)/i', $reply, $matches)) {
-            $specialty = trim($matches[1]);
+        if (preg_match('/Specialty:\s*(.*)/i', $reply, $m)) {
+            $specialty = trim($m[1]);
         }
 
-        // 👨‍⚕️ Find doctors
+        if (preg_match('/Urgency:\s*(.*)/i', $reply, $m)) {
+            $urgency = trim($m[1]);
+        }
+
+        if (preg_match('/Confidence:\s*(.*)/i', $reply, $m)) {
+            $confidence = trim($m[1]);
+        }
+
+        // 👨‍⚕️ Smart doctor suggestion (ONLY if HIGH confidence)
         $doctors = [];
 
-        if ($specialty) {
+        if ($confidence && strtolower($confidence) === 'high' && $specialty) {
             $doctors = User::where('role', 'doctor')
                 ->where('specialty', 'like', "%{$specialty}%")
                 ->take(5)
                 ->get(['id', 'name', 'specialty', 'location']);
         }
 
-        // 📡 Return JSON
+        // 📡 Return everything to frontend
         return response()->json([
             'reply' => $reply,
-            'doctors' => $doctors
+            'doctors' => $doctors,
+            'urgency' => $urgency,
+            'confidence' => $confidence
         ]);
     }
 }

@@ -58,6 +58,25 @@ document.getElementById('chat-form').addEventListener('submit', function(e) {
             </div>
         `;
 
+        if (data.urgency) {
+            let color = 'green';
+            let label = '🟢 Low';
+
+            if (data.urgency.toLowerCase() === 'high') {
+                color = 'red';
+                label = '🔴 High - Seek immediate care';
+            } else if (data.urgency.toLowercase() === 'medium') {
+                color = 'yellow';
+                label = '🟡 Medium - consider booking';
+            }
+
+            box.innerHTML += `
+                 <div class="mt-2 p-2 bg-${color}-100 text-${color}-700 rounded">
+                      <strong>Urgency:</strong> ${label}
+                </div>
+            `;
+        }
+
         // 👨‍⚕️ Recommended doctors
         if (data.doctors && data.doctors.length > 0) {
             let doctorsHtml = `<div class="mt-3"><strong>👨‍⚕️ Recommended Doctors:</strong>`;
