@@ -14,6 +14,7 @@ use App\Http\Controller\StripeController;
 use App\Http\Controller\AdminController;
 use App\Http\Controllers\StripePortalController;
 use App\Http\Controller\DoctorController;
+use App\Http\Controller\SymptomCheckerController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -119,6 +120,10 @@ Route::middleware(['auth'])->group(function () {
 
     // Download
     Route::get('records/download/{id}', [MedicalRecordcontroller::class, 'download'])->name('records.download');
+
+    Route::get('/symptom-checker', [SymptomCheckerController::class, 'index'])->name('symptom.index');
+
+    Route::post('/symptom-checker', [SymptomCheckerController::class, 'analyze'])->name('symptom.analyze');
 
   
     /*
