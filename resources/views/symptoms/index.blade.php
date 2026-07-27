@@ -27,5 +27,24 @@
         </p>
     @endif
 
+    @if(!empty($doctors) && count($doctors))
+        <div class="mt-6">
+            <h3 class="font-bold mb-3"> 🧑‍⚕️ Recommended Doctors</h3>
+
+            @foreach($doctors as $doc)
+                <div class="border p-3 mb-2 rounded">
+                    <p class="font-bold">{{ $doc->name }}</p>
+                    <p>{{ $doc->specialty }}</p>
+                    <p class="text-sm text-gray-600">{{ $doc->location }}</p>
+
+                    <a href="{{ route('appointments.create', ['doctor_id' => $doc->id]) }}"
+                       class="inline-block mt-2 bg-green-600 text-white px-1 rounded">
+                         Book Appointment
+                    </a>
+                </div>
+            @endforeach
+        </div>
+    @endif
+
 </div>
 </x-app-layout>

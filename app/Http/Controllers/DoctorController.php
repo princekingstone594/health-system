@@ -157,4 +157,16 @@ class DoctorController extends Controller
 
         return redirect()->back()->with('success', 'Notes saved successfully.');
     }
+
+    public function updateProfile(Request $request)
+    {
+       auth()->user()->update($request->only([
+        'specialty',
+        'qualifications',
+        'location',
+        'experience_years'
+       ]));
+
+       return back()->with('success', 'Profile updated');
+    }
 }
