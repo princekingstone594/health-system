@@ -25,6 +25,24 @@
 
     </div>
 
+    <div class="mt-4">
+        <label class="block text-sm font-semibold">Repeat</label>
+
+        <select name="recurrence_type" class="border p-2 rounded w-full">
+            <option value="">No Repeat</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+        </selct>
+    </div>
+
+    <div class="mt-2">
+        <label class="block text-sm font-semibold">Repeat Count</label>
+        <input type="number" name="recurrence_count" min="1" max="30"
+            class="border p-2 rounded w-full"
+            placeholer="e.g. 4">
+    </div>
+
     {{-- ✅ FULLCALENDAR --}}
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>

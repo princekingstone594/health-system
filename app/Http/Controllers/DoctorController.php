@@ -116,4 +116,45 @@ class DoctorController extends Controller
 
         return back()->with('success', 'Appointment rejected.');
     }
+
+    public function addNotes($id)
+    {
+        $appointment = Appointment::findOfFail($id);
+
+        if ($appointment->doctor_id !== auth()->id()) {
+            abort(403);
+        }
+
+        return view('doctor.notes', compact('appointment'));
+    }
+
+    public function storeNotes(Request $request, $id)
+    {
+        $appointment = Appointment::findOrFail($id);
+
+        if ($appointment->doctor_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'doctor_notes'=> 'nullable|string',
+            'diagnosis' => 'nullable|string',
+            'prescription' => 'nullable|string',
+            'is_shared_with_patient' => 'required|boolean'
+        ]);
+
+        $appointment->update([
+            'doctor_notes' => $request->doctor_notes,
+            'diagnosis' => $request->diagnosis,
+            'prescription' => $request->prescription,
+            'is_shared_with_patient' => $request->is_shared_with_patient,
+            'status' => 'completed'
+        ]);
+
+        $user = $appointment->patient;
+
+        $user->notify(new \App\Notifications\DoctorNotesAdded($appointment));
+
+        return redirect()->back()->with('success', 'Notes saved successfully.');
+    }
 }

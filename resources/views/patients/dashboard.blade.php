@@ -168,6 +168,19 @@
                         <p class="text-green-600 text-sm mt-2">✅ You already reviewed this appointment</p>
                     @endif
 
+                    @if($appt->diagnosis && $appt->is_shared_with_patient)
+                        <div class="mt-2 p-3 bg-gray-50 rounded">
+
+                            <p class="text-sm"><strong>Diagnosis:</strong> {{ $appt->diagnosis }}</p>
+
+                            @if($appt->prescription)
+                                <p class="text-sm mt-1">
+                                    <strong>Precription:</strong> {{ $appt->prescription }}
+                                </p>
+                            @endif
+                        </div>
+                    @endif
+
                 </div>
             @empty
                 <p class="text-gray-500">No past appointments.</p>

@@ -53,6 +53,11 @@
             @endforelse
         </div>
 
+        <a href="{{ route('doctor.notes', $appt->id) }}"
+           class="text-blue-600 underline text-sm">
+            Add Notes
+        </a>
+
         <!-- 📆 Upcoming -->
         <div class="bg-white p-6 rounded shadow">
             <h3 class="mb-4 font-semibold">Upcoming Appointments</h3>

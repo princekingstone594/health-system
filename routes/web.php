@@ -198,6 +198,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/doctor/appointments/{id}/status', [DoctorController::class, 'updateStatus'])->name('doctor.appointment.status');
 
         Route::get('/doctor/calendar', [DoctorController::class, 'calendar'])->name('doctor.calendar');
+
+        Route::get('/doctor/appointment/{id}/notes', [DoctorController::class, 'addNotes'])->name('doctor.notes');
+
+        Route::post('/doctor/appointment/{id}/notes', [DoctorController::class, 'storeNotes'])->name('doctor.notes.store');
     });
     
     Route::middleware(['auth', 'patient'])->group(function () {

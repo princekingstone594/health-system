@@ -14,6 +14,14 @@ class Appointment extends Model
         'appointment_date',
         'appointment_time',
         'status',
+        'is_paid',
+        'doctor_notes',
+        'diagnosis',
+        'prescription',
+        'is_shared_with_patient',
+        'recurrence_type',
+        'recurrence_count',
+        'parent_id',
     ];
 
     public function patient()
