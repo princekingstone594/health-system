@@ -25,7 +25,10 @@
 document.getElementById('chat-form').addEventListener('submit', function(e) {
     e.preventDefault();
 
-    let message = document.getElementById('message').value;
+    let messageInput = document.getElementById('message');
+    let message = messageInput.value.trim();
+
+    if (!message) return;
 
     fetch('/ai-chat/send', {
         method: 'POST',
@@ -39,14 +42,49 @@ document.getElementById('chat-form').addEventListener('submit', function(e) {
     .then(data => {
         let box = document.getElementById('chat-box');
 
-        box.innerHTML += `<div><strong>You:</strong><p>${message}</p></div>`;
-        box.innerHTML += `<div><strong>AI:</strong><p>${data.reply}</p></div>`;
+        // User message
+        box.innerHTML += `
+            <div class="mb-2">
+                <strong>You:</strong>
+                <p>${message}</p>
+            </div>
+        `;
 
-        document.getElementById('message').value = '';
+        // AI reply
+        box.innerHTML += `
+            <div class="mb-2">
+                <strong>AI:</strong>
+                <p>${data.reply}</p>
+            </div>
+        `;
+
+        // 👨‍⚕️ Recommended doctors
+        if (data.doctors && data.doctors.length > 0) {
+            let doctorsHtml = `<div class="mt-3"><strong>👨‍⚕️ Recommended Doctors:</strong>`;
+
+            data.doctors.forEach(doc => {
+                doctorsHtml += `
+                    <div class="border p-3 mt-2 rounded">
+                        <p class="font-bold">${doc.name}</p>
+                        <p>${doc.specialty}</p>
+                        <p class="text-sm text-gray-600">${doc.location ?? ''}</p>
+
+                        <a href="/appointments/create?doctor_id=${doc.id}"
+                           class="bg-green-600 text-white px-3 py-1 rounded mt-1 inline-block">
+                            Book Appointment
+                        </a>
+                    </div>
+                `;
+            });
+
+            doctorsHtml += `</div>`;
+            box.innerHTML += doctorsHtml;
+        }
+
+        messageInput.value = '';
         box.scrollTop = box.scrollHeight;
     });
 });
 </script>
 
-</div>
 </x-app-layout>

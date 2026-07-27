@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use App\Models\AiChat;
+use App\Models\User;
 
 class AiChatController extends Controller
 {
@@ -30,7 +31,7 @@ class AiChatController extends Controller
             'role' => 'user'
         ]);
 
-        // 🧠 Get conversation history (last 10 messages)
+        // 🧠 Get last 10 messages (memory)
         $history = AiChat::where('user_id', $userId)
             ->latest()
             ->take(10)
@@ -45,14 +46,24 @@ class AiChatController extends Controller
             ->values()
             ->toArray();
 
-        // 🤖 Call AI
+        // 🤖 Call AI with structured instruction
         $response = Http::withToken(config('services.openai.key'))
             ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => 'gpt-4o-mini',
                 'messages' => array_merge([
                     [
                         'role' => 'system',
-                        'content' => 'You are a helpful medical assistant. Ask follow-up questions before giving conclusions. Keep responses safe and short.'
+                        'content' => 'You are a medical assistant.
+
+Ask follow-up questions if needed.
+
+When confident, respond in this format:
+
+Condition: ...
+Specialty: ...
+Urgency: Low/Medium/High
+Advice: ...
+'
                     ]
                 ], $history),
             ]);
@@ -66,8 +77,27 @@ class AiChatController extends Controller
             'role' => 'assistant'
         ]);
 
+        // 🧠 Extract specialty
+        $specialty = null;
+
+        if (preg_match('/Specialty:\s*(.*)/i', $reply, $matches)) {
+            $specialty = trim($matches[1]);
+        }
+
+        // 👨‍⚕️ Find doctors
+        $doctors = [];
+
+        if ($specialty) {
+            $doctors = User::where('role', 'doctor')
+                ->where('specialty', 'like', "%{$specialty}%")
+                ->take(5)
+                ->get(['id', 'name', 'specialty', 'location']);
+        }
+
+        // 📡 Return JSON
         return response()->json([
-            'reply' => $reply
+            'reply' => $reply,
+            'doctors' => $doctors
         ]);
     }
 }
