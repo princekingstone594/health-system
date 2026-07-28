@@ -22,6 +22,7 @@ class Appointment extends Model
         'recurrence_type',
         'recurrence_count',
         'parent_id',
+        'ai_summary',
     ];
 
     public function patient()

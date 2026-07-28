@@ -26,5 +26,13 @@
             <p class="text-gray-500 mt-2">No reviews yet.</p>
         @endforelse
 
+        @if(isset($appointment) && $appointment->array_intersect-summary)
+          <div class="mt-4 p-4 bg-blue-50 border rounded">
+            <h3 class="font-bold mb-2">🧠 AI Patient Summary</h3>
+            <p class="whitespace-pre-line-line text-sm">
+                {{ $appointment->ai_summary }}
+            </p>
+        @endif
+
     </div>
 </x-app-layout>

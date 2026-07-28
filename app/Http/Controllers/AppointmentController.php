@@ -9,12 +9,11 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\QueryException;
 use App\Events\SlotBooked;
+use App\Models\AiChatMemory;
+use Illuminate\Support\Facades\Http;
 
 class AppointmentController extends Controller
 {
-    /**
-     * List user appointments
-     */
     public function index()
     {
         $appointments = Appointment::where('patient_id', auth()->id())
@@ -25,9 +24,6 @@ class AppointmentController extends Controller
         return view('appointments.index', compact('appointments'));
     }
 
-    /**
-     * Show booking page
-     */
     public function create(Request $request)
     {
         $doctorId = $request->doctor_id;
@@ -43,7 +39,7 @@ class AppointmentController extends Controller
     }
 
     /**
-     * Store appointment (WITH RECURRING + RACE SAFE)
+     * 🚀 STORE (NOW WITH AI SUMMARY)
      */
     public function store(Request $request)
     {
@@ -79,7 +75,45 @@ class AppointmentController extends Controller
                 return back()->with('error', 'Time slot already booked.');
             }
 
-            // ✅ Create FIRST appointment
+            // ===============================
+            // 🧠 BUILD AI SUMMARY
+            // ===============================
+            $messages = AiChatMemory::where('user_id', auth()->id())
+                ->latest()
+                ->take(15)
+                ->get()
+                ->reverse();
+
+            $conversation = '';
+
+            foreach ($messages as $msg) {
+                $conversation .= strtoupper($msg->role) . ": " . $msg->message . "\n";
+            }
+
+            $summary = null;
+
+            if ($conversation) {
+                $response = Http::withToken(env('OPENAI_API_KEY'))
+                    ->post('https://api.openai.com/v1/chat/completions', [
+                        'model' => 'gpt-4o-mini',
+                        'messages' => [
+                            [
+                                'role' => 'system',
+                                'content' => 'You are a medical assistant. Generate a short clinical summary for a doctor including symptoms, possible condition, and urgency.'
+                            ],
+                            [
+                                'role' => 'user',
+                                'content' => $conversation
+                            ]
+                        ]
+                    ]);
+
+                $summary = $response['choices'][0]['message']['content'] ?? null;
+            }
+
+            // ===============================
+            // ✅ CREATE FIRST APPOINTMENT
+            // ===============================
             $first = Appointment::create([
                 'patient_id' => auth()->id(),
                 'doctor_id' => $doctorId,
@@ -88,9 +122,12 @@ class AppointmentController extends Controller
                 'status' => 'pending',
                 'recurrence_type' => $request->recurrence_type,
                 'recurrence_count' => $request->recurrence_count,
+                'ai_summary' => $summary, // ✅ ATTACHED HERE
             ]);
 
+            // ===============================
             // 🔁 RECURRING LOGIC
+            // ===============================
             if ($request->recurrence_type && $request->recurrence_count) {
 
                 $baseDate = Carbon::parse($date);
@@ -103,21 +140,15 @@ class AppointmentController extends Controller
                         'monthly' => $baseDate->copy()->addMonths($i),
                     };
 
-                    // 🚫 Skip past
-                    if ($nextDate->lt(now())) {
-                        continue;
-                    }
+                    if ($nextDate->lt(now())) continue;
 
-                    // 🔒 Prevent double booking
                     $exists = Appointment::where('doctor_id', $doctorId)
                         ->where('appointment_date', $nextDate->format('Y-m-d'))
                         ->where('appointment_time', $time)
                         ->lockForUpdate()
                         ->exists();
 
-                    if ($exists) {
-                        continue;
-                    }
+                    if ($exists) continue;
 
                     Appointment::create([
                         'patient_id' => auth()->id(),
@@ -125,17 +156,21 @@ class AppointmentController extends Controller
                         'appointment_date' => $nextDate->format('Y-m-d'),
                         'appointment_time' => $time,
                         'status' => 'pending',
-                        'parent_id' => $first->id
+                        'parent_id' => $first->id,
+                        'ai_summary' => $summary, // ✅ SAME SUMMARY
                     ]);
                 }
             }
 
             DB::commit();
 
+            // 🔥 STEP 5 — CLEAR MEMORY AFTER BOOKING
+            AiChatMemory::where('user_id', auth()->id())->delete();
+
             event(new SlotBooked($doctorId, $date));
 
             return redirect()->route('appointments.index')
-                ->with('success', 'Appointment booked successfully.');
+                ->with('success', 'Appointment booked with AI summary.');
 
         } catch (QueryException $e) {
 
@@ -149,9 +184,6 @@ class AppointmentController extends Controller
         }
     }
 
-    /**
-     * Generate available slots
-     */
     public function getAvailableSlots($doctorId, $date)
     {
         $day = strtolower(Carbon::parse($date)->format('l'));
@@ -160,9 +192,7 @@ class AppointmentController extends Controller
             ->where('day_of_week', $day)
             ->first();
 
-        if (!$availability) {
-            return [];
-        }
+        if (!$availability) return [];
 
         $start = Carbon::parse($availability->start_time);
         $end = Carbon::parse($availability->end_time);
@@ -182,7 +212,6 @@ class AppointmentController extends Controller
             $start->addMinutes($duration);
         }
 
-        // 🚫 Remove booked
         $booked = Appointment::where('doctor_id', $doctorId)
             ->where('appointment_date', $date)
             ->pluck('appointment_time')
@@ -191,9 +220,6 @@ class AppointmentController extends Controller
         return array_values(array_diff($slots, $booked));
     }
 
-    /**
-     * Cancel appointment
-     */
     public function cancel($id)
     {
         $appointment = Appointment::findOrFail($id);
@@ -202,18 +228,13 @@ class AppointmentController extends Controller
             abort(403);
         }
 
-        $appointment->update([
-            'status' => 'cancelled'
-        ]);
+        $appointment->update(['status' => 'cancelled']);
 
         event(new SlotBooked($appointment->doctor_id, $appointment->appointment_date));
 
         return back()->with('success', 'Appointment cancelled.');
     }
 
-    /**
-     * Reschedule form
-     */
     public function rescheduleForm($id)
     {
         $appointment = Appointment::findOrFail($id);
@@ -225,9 +246,6 @@ class AppointmentController extends Controller
         return view('appointments.reschedule', compact('appointment'));
     }
 
-    /**
-     * Reschedule (SAFE)
-     */
     public function reschedule(Request $request, $id)
     {
         $appointment = Appointment::findOrFail($id);
@@ -283,9 +301,6 @@ class AppointmentController extends Controller
         }
     }
 
-    /**
-     * AJAX: Load slots
-     */
     public function slots(Request $request)
     {
         return response()->json(
@@ -293,9 +308,6 @@ class AppointmentController extends Controller
         );
     }
 
-    /**
-     * Calendar events
-     */
     public function calendarEvents(Request $request)
     {
         $doctorId = $request->doctor_id;
