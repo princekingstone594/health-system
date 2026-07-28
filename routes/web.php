@@ -17,6 +17,7 @@ use App\Http\Controller\DoctorController;
 use App\Http\Controller\SymptomCheckerController;
 use App\Http\Controller\AiChatController;
 use App\Http\Controllers\DoctorSummaryController;
+use App\Http\Controllers\MedicalFileController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -134,6 +135,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/doctor-summary', [DoctorSummaryController::class, 'generate'])->middleware('auth');
 
     Route::get('/patient/history', [PatientHistoryController::class, 'index'])->name('patient.history');
+
+    Route::post('/medical-files', [MedicalFileController::class, 'store'])->name('medical-files.store');
+    Route::get('/medical-files/{id}/download', [MedicalFileController::class, 'destroy'])->name('medical-files.delete');
+    Route::delete('/medical-files/{id}', [MedicalFileController::class, 'destroy'])->name('medical-files.delete');
 
   
     /*

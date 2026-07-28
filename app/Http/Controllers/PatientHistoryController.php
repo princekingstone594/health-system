@@ -13,7 +13,7 @@ class PatientHistoryController extends Controller
     public function index()
     {
         $appointments = Appointment::where('patient_id', auth()->id())
-            ->with('doctor')
+            ->with(['doctor', 'medicalFiles'])
             ->orderBy('appointment_date', 'desc')
             ->orderBy('appointment_time', 'desc')
             ->get();
