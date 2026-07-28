@@ -10,6 +10,16 @@
         </button>
     </div>
 
+    <div div class="mb-3">
+        <label class="block font-semibold mb-1">🧑‍⚕️ Doctor Style</label>
+        <select id="personality" class="border p-2 rounded w-full">
+            <option value="friendly">😊 Friendly Doctor</option>
+            <option value="professional">🧑‍⚕️ Professional</option>
+            <option value="calm">🙎 Calm & Reassuring</option>
+            <option value="emergency">🚨 Emergency Mode</option>
+        </select>
+    </div>
+
     <div id="chat-box" class="border p-4 h-96 overflow-y-auto mb-3 bg-gray-50">
 
         @foreach($messages as $msg)
@@ -69,13 +79,18 @@ document.getElementById('chat-form').addEventListener('submit', function(e) {
 
     box.scrollTop = box.scrollHeight;
 
+    let personality = document.getElementById('personality').value;
+
     fetch('/ai-chat/send', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ 
+            message,
+            personality
+        })
     })
     .then(res => res.json())
     .then(data => {

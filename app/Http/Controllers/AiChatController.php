@@ -12,7 +12,6 @@ class AiChatController extends Controller
     public function index()
     {
         $messages = AiChat::where('user_id', auth()->id())->get();
-
         return view('ai.chat', compact('messages'));
     }
 
@@ -23,15 +22,25 @@ class AiChatController extends Controller
         ]);
 
         $userId = auth()->id();
+        $personality = $request->personality ?? 'friendly';
+
+        // 🎭 Personality system prompt
+        $personalityPrompt = match ($personality) {
+            'professional' => "You are a highly professional medical doctor. Be precise, clinical, and concise.",
+            'calm' => "You are a calm and reassuring doctor. Speak gently, reduce anxiety, and avoid alarming language.",
+            'emergency' => "You are an emergency medical assistant. Be urgent, direct, and prioritize life-threatening risks.",
+            default => "You are a friendly and helpful doctor. Speak in a warm, simple, and caring tone."
+        };
 
         // 💾 Save user message
         AiChat::create([
             'user_id' => $userId,
             'message' => $request->message,
-            'role' => 'user'
+            'role' => 'user',
+            'personality' => $personality
         ]);
 
-        // 🧠 Get last 10 messages (memory)
+        // 🧠 Conversation memory (last 10 messages)
         $history = AiChat::where('user_id', $userId)
             ->latest()
             ->take(10)
@@ -46,14 +55,16 @@ class AiChatController extends Controller
             ->values()
             ->toArray();
 
-        // 🤖 AI Call (INTELLIGENT PROMPT)
+        // 🤖 AI request
         $response = Http::withToken(config('services.openai.key'))
             ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => 'gpt-4o-mini',
                 'messages' => array_merge([
                     [
                         'role' => 'system',
-                        'content' => 'You are a medical assistant.
+                        'content' => $personalityPrompt . "
+
+You are a medical assistant.
 
 First, ask follow-up questions if symptoms are unclear.
 
@@ -65,7 +76,7 @@ Urgency: Low/Medium/High
 Confidence: Low/Medium/High
 Advice: ...
 
-If not confident, DO NOT include Specialty or Condition. Just ask questions.'
+If not confident, DO NOT include Specialty or Condition yet. Just ask questions."
                     ]
                 ], $history),
             ]);
@@ -76,42 +87,37 @@ If not confident, DO NOT include Specialty or Condition. Just ask questions.'
         AiChat::create([
             'user_id' => $userId,
             'message' => $reply,
-            'role' => 'assistant'
+            'role' => 'assistant',
+            'personality' => $personality
         ]);
 
-        // 🧠 Extract intelligence
+        // 🧠 Extract specialty
         $specialty = null;
+        if (preg_match('/Specialty:\s*(.*)/i', $reply, $matches)) {
+            $specialty = trim($matches[1]);
+        }
+
+        // 🚨 Extract urgency
         $urgency = null;
-        $confidence = null;
-
-        if (preg_match('/Specialty:\s*(.*)/i', $reply, $m)) {
-            $specialty = trim($m[1]);
+        if (preg_match('/Urgency:\s*(.*)/i', $reply, $matches)) {
+            $urgency = trim($matches[1]);
         }
 
-        if (preg_match('/Urgency:\s*(.*)/i', $reply, $m)) {
-            $urgency = trim($m[1]);
-        }
-
-        if (preg_match('/Confidence:\s*(.*)/i', $reply, $m)) {
-            $confidence = trim($m[1]);
-        }
-
-        // 👨‍⚕️ Smart doctor suggestion (ONLY if HIGH confidence)
+        // 👨‍⚕️ Find doctors
         $doctors = [];
 
-        if ($confidence && strtolower($confidence) === 'high' && $specialty) {
+        if ($specialty) {
             $doctors = User::where('role', 'doctor')
                 ->where('specialty', 'like', "%{$specialty}%")
                 ->take(5)
                 ->get(['id', 'name', 'specialty', 'location']);
         }
 
-        // 📡 Return everything to frontend
+        // 📡 Return response
         return response()->json([
             'reply' => $reply,
             'doctors' => $doctors,
-            'urgency' => $urgency,
-            'confidence' => $confidence
+            'urgency' => $urgency
         ]);
     }
 }
