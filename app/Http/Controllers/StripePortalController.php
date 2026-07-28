@@ -129,7 +129,7 @@ class StripePortalController extends Controller
              */
             if ($session->mode === 'subscription') {
 
-                $userId = $session->metadata->user_id ?? null;
+                $userId = $session->metadata->patient_id ?? null;
                 $plan = $session->metadata->plan ?? 'pro';
 
                 if ($userId) {

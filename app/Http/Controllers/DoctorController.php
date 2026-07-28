@@ -70,7 +70,7 @@ class DoctorController extends Controller
             ->get()
             ->map(function ($appt) {
                 return[
-                    'title' => 'Patient #' . $user_id,
+                    'title' => 'Patient #' . $patient_id,
                     'start' => $appt->date . 'T' . $appt->time,
                     'color' => $this->getStatusColor($appt->status),
                 ];

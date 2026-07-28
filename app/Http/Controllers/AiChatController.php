@@ -6,22 +6,24 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use App\Models\AiChat;
 use App\Models\User;
+use App\Models\AiChatMemory;
 
 class AiChatController extends Controller
 {
     public function index()
     {
-        $messages = AiChat::where('user_id', auth()->id())->get();
+        $messages = AiChat::where('patient_id', auth()->id())->get();
         return view('ai.chat', compact('messages'));
     }
 
     public function send(Request $request)
     {
         $request->validate([
-            'message' => 'required|string|min:2'
+            'message' => 'required|string|min:2',
+            'personality' => 'nullable|string'
         ]);
 
-        $userId = auth()->id();
+        $patientId = auth()->id();
         $personality = $request->personality ?? 'friendly';
 
         // 🎭 Personality system prompt
@@ -34,62 +36,83 @@ class AiChatController extends Controller
 
         // 💾 Save user message
         AiChat::create([
-            'user_id' => $userId,
+            'patient_id' => $patientId,
             'message' => $request->message,
             'role' => 'user',
             'personality' => $personality
         ]);
 
         // 🧠 Conversation memory (last 10 messages)
-        $history = AiChat::where('user_id', $userId)
+        $history = AiChat::where('patient_id', $patientId)
             ->latest()
             ->take(10)
             ->get()
             ->reverse()
-            ->map(function ($msg) {
-                return [
-                    'role' => $msg->role,
-                    'content' => $msg->message
-                ];
-            })
+            ->map(fn ($msg) => [
+                'role' => $msg->role,
+                'content' => $msg->message
+            ])
             ->values()
             ->toArray();
 
-        // 🤖 AI request
+        // 🧠 Load stored patient memory
+        $memories = AiChatMemory::where('patient_id', $patientId)->get();
+
+        $memoryText = $memories->map(function ($m) {
+            return "{$m->key}: {$m->value}";
+        })->implode(", ");
+
+        // 🤖 AI Request
         $response = Http::withToken(config('services.openai.key'))
             ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => 'gpt-4o-mini',
                 'messages' => array_merge([
                     [
                         'role' => 'system',
-                        'content' => $personalityPrompt . "
+                        'content' => "
+                        {$personalityPrompt}
 
-You are a medical assistant.
+                        You are simulating a real doctor consultation.
 
-First, ask follow-up questions if symptoms are unclear.
+                        Patient Known Info: {$memoryText}
 
-ONLY when reasonably confident, respond in this format:
+                        RULES:
+                        - Ask follow-up questions if symptoms are unclear
+                        - Do NOT jump to conclusions too early
+                        - Be medically safe and realistic
+                        - Speak naturally like a real doctor
 
-Condition: ...
-Specialty: ...
-Urgency: Low/Medium/High
-Confidence: Low/Medium/High
-Advice: ...
+                        WHEN READY, respond EXACTLY in format:
 
-If not confident, DO NOT include Specialty or Condition yet. Just ask questions."
+                        Condition: ...
+                        Specialty: ...
+                        Urgency: Low/Medium/High
+                        Confidence: Low/Medium/High
+                        Advice: ...
+
+                        Also extract and remember if mentioned:
+                        - Age
+                        - Allergies
+                        - Chronic conditions
+                        - Medications
+                        "
                     ]
                 ], $history),
+                'temperature' => 0.7
             ]);
 
         $reply = $response['choices'][0]['message']['content'] ?? 'No response';
 
         // 💾 Save AI reply
         AiChat::create([
-            'user_id' => $userId,
+            'patient_id' => $patientId,
             'message' => $reply,
             'role' => 'assistant',
             'personality' => $personality
         ]);
+
+        // 🧠 Store extracted memory
+        $this->storeMemory($patientId, $reply);
 
         // 🧠 Extract specialty
         $specialty = null;
@@ -119,5 +142,32 @@ If not confident, DO NOT include Specialty or Condition yet. Just ask questions.
             'doctors' => $doctors,
             'urgency' => $urgency
         ]);
+    }
+
+    // 🧠 MEMORY EXTRACTION ENGINE
+    private function storeMemory($patientId, $text)
+    {
+        $patterns = [
+            'age' => '/age:\s*(\d+)/i',
+            'allergies' => '/allerg(?:y|ies):\s*(.*)/i',
+            'chronic_condition' => '/chronic condition:\s*(.*)/i',
+            'medications' => '/medications?:\s*(.*)/i',
+        ];
+
+        foreach ($patterns as $key => $pattern) {
+            if (preg_match($pattern, $text, $matches)) {
+
+                AiChatMemory::updateOrCreate(
+                    [
+                        'patient_id' => $patientId,
+                        'key' => $key
+                    ],
+                    [
+                        'value' => trim($matches[1]),
+                        'type' => 'medical'
+                    ]
+                );
+            }
+        }
     }
 }

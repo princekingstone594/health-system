@@ -11,11 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ai_chats', function (Blueprint $table) {
+        Schema::create('ai_chat_memories', function (Blueprint $table) {
             $table->id();
+
             $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
-            $table->text('message');
-            $table->enum('role', ['user', 'assistant']);
+
+            // 🧠 Stored patient info
+            $table->string('key'); // e.g/ allergies, chronic_condition, age
+            $table->text('value');
+
+            // Optional tagging
+            $table->string('type')->nullable(); // e.g. medical, lifestyle
+
             $table->timestamps();
         });
     }
@@ -25,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ai_chats');
+        Schema::dropIfExists('ai_chat_memories');
     }
 };

@@ -14,7 +14,7 @@ class PatientDashboardController extends Controller
         $user = Auth::user();
 
         // Get the patient record linked to this user
-        $patient = Patient::where('user_id', $user->id)->first();
+        $patient = Patient::where('patient_id', $user->id)->first();
 
         // If no patient profile exists, redirect or handle gracefully
         if (!$patient) {

@@ -19,7 +19,7 @@ class ReviewController extends Controller
         $appointment = Appointment::findOrFail($request->appointment_id);
 
         // 🔒 SECURITY CHECKS
-        if ($appointment->user_id !== auth()->id()) {
+        if ($appointment->patient_id !== auth()->id()) {
             abort(403);
         }
 

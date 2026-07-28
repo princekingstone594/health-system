@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class AiChat extends Model
 {
-    protected $fillable = ['user_id', 'message', 'role'];
+    protected $fillable = ['patient_id', 'message', 'role'];
 }
