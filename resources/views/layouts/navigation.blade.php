@@ -41,13 +41,18 @@
                         <x-nav-link :href="route('availability.index')" :active="request()->routeIs('availability.*')">
                             {{ __('Availability') }}
                         </x-nav-link>
+
+                        <x-nav-link :href="route('availability.calendar')" :active="request()->routeIs('availability.calendar')">
+                            {{ __('Calendar') }}
+                        </x-nav-link>
                     @endif
 
-                    <!-- Availability Calendar -->
-                    @if(auth()->user()->role === 'doctor')
-                        <x-nav-link :href="route('availability.calendar')" :active="request()->routIs('availability.calendar')">
-                            Calendar
+                    <!-- Patient History (PATIENT ONLY) -->
+                    @if(auth()->user()->role === 'patient')
+                        <x-nav-link :href="route('patient.history')" :active="request()->routeIs('patient.history')">
+                            {{ __('My History') }}
                         </x-nav-link>
+                    @endif
 
                 </div>
             </div>
@@ -109,29 +114,35 @@
 
         <div class="pt-2 pb-3 space-y-1">
 
-            <!-- Dashboard -->
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
 
-            <!-- Patients -->
             @if(in_array(auth()->user()->role, ['admin', 'receptionist']))
                 <x-responsive-nav-link :href="route('patients.index')" :active="request()->routeIs('patients.*')">
                     {{ __('Patients') }}
                 </x-responsive-nav-link>
             @endif
 
-            <!-- Appointments -->
             @if(in_array(auth()->user()->role, ['admin', 'doctor', 'receptionist']))
                 <x-responsive-nav-link :href="route('appointments.create')" :active="request()->routeIs('appointments.*')">
                     {{ __('Appointments') }}
                 </x-responsive-nav-link>
             @endif
 
-            <!-- Availability (DOCTOR ONLY) -->
             @if(auth()->user()->role === 'doctor')
                 <x-responsive-nav-link :href="route('availability.index')" :active="request()->routeIs('availability.*')">
                     {{ __('Availability') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('availability.calendar')" :active="request()->routeIs('availability.calendar')">
+                    {{ __('Calendar') }}
+                </x-responsive-nav-link>
+            @endif
+
+            @if(auth()->user()->role === 'patient')
+                <x-responsive-nav-link :href="route('patient.history')" :active="request()->routeIs('patient.history')">
+                    {{ __('My History') }}
                 </x-responsive-nav-link>
             @endif
 

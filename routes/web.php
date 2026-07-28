@@ -133,6 +133,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/doctor-summary', [DoctorSummaryController::class, 'generate'])->middleware('auth');
 
+    Route::get('/patient/history', [PatientHistoryController::class, 'index'])->name('patient.history');
+
   
     /*
     |--------------------------------------------------------------------------
