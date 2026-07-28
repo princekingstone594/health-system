@@ -1,7 +1,14 @@
 <x-app-layout>
 <div class="max-w-2xl mx-auto p-4">
 
-    <h2 class="text-xl font-bold mb-4">💬 AI Medical Assistant</h2>
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">💭 AI Medical Assistant</h2>
+
+        <button id="voice-toggle"
+                class="bg-gray-200 px-3 py-1 rounded text-sm">
+            🔊 Voice ON
+        </button>
+    </div>
 
     <div id="chat-box" class="border p-4 h-96 overflow-y-auto mb-3 bg-gray-50">
 
@@ -103,6 +110,8 @@ document.getElementById('chat-form').addEventListener('submit', function(e) {
                     <strong>Urgency:</strong> ${label}
                 </div>
             `;
+            // 🔊 Speak AI response
+            speak(data.reply);
         }
 
         // 👨‍⚕️ Doctors
@@ -182,6 +191,50 @@ if ('webkitSpeechRecognition' in window) {
 } else {
     micBtn.disabled = true;
     micBtn.innerText = '❌';
+}
+</script>
+
+<script>
+// ===============================
+// 🔊 AI VOICE REPLY (Text-to-Speech)
+// ===============================
+let voiceEnabled = true;
+
+const voiceToggle = document.getElementById('voice-toggle');
+
+voiceToggle.addEventListener('click', () => {
+    voiceEnabled = !voiceEnabled;
+
+    voiceToggle.innerText = voiceEnabled
+        ? '🔊 Voice ON'
+        : '🔇 Voice OFF';
+});
+
+// Speak function
+function speak(text) {
+    if (!voiceEnabled) return;
+
+    if (!('speechSynthesis' in window)) return;
+
+    const speech = new SpeechSynthesisUtterance(text);
+
+    // 🧠 Voice tuning (more human-like)
+    speech.rate = 0.95;
+    speech.pitch = 1;
+    speech.volume = 1;
+
+    // Optional: choose a nicer voice
+    const voices = speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v =>
+        v.name.includes('Google') || v.name.includes('Female')
+    );
+
+    if (preferredVoice) {
+        speech.voice = preferredVoice;
+    }
+
+    speechSynthesis.cancel(); // stop previous speech
+    speechSynthesis.speak(speech);
 }
 </script>
 
