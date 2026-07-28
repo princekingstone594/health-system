@@ -35,7 +35,55 @@ class AppointmentController extends Controller
             $slots = $this->getAvailableSlots($doctorId, $date);
         }
 
-        return view('appointments.create', compact('slots', 'doctorId', 'date'));
+        // 🧠 PREFILL FROM AI MEMORY
+
+        $messages = AiChatMemory::where('user_id', auth()->id())
+              ->latest()
+              ->take(15)
+              ->get()
+              ->reverse();
+
+        $conversation = '';
+
+        foreach ($messages as $msg) {
+            $conversation = strtoupper($msg->role) . ":" . $msg->message . "\n";
+        }
+
+        $aiPrefill = [
+            'reason' => null,
+            'summary' => null,
+            'symptoms' => null,
+        ];
+
+        if ($conversation) {
+            $response = Http::withToken(env('OPENAI_AI_KEY'))
+               ->post('https://api.openai.com/v1/chat/completions', [
+                  'model' => 'gpt-40-mini',
+                  'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'Extract structured medical info this conversation. Return JSON with keys: symptoms, reason_for_visit, short_summary.'
+                    ],
+                    [
+                        'role' => 'system',
+                        'content' => $conversation
+                    ]
+                  ],
+                  'temperature' => 0.3
+               ]);
+            $conent = $response['choices'][0]['message']['content'] ?? '{}';
+
+            // Try decoding JSON
+            $json = json_decode($content, true);
+
+            if ($json) {
+                $aiPrefill['symptoms'] = $json['symptoms'] ?? null;
+                $aiPrefill['reason'] = $json['reason_for_visit'] ?? null;
+                $aiPrefill['summary'] = $json['short_summary'] ?? null;
+            }
+        }
+
+        return view('appointments.create', compact('slots', 'doctorId', 'date', 'aiPrefill'));
     }
 
     /**
@@ -123,6 +171,8 @@ class AppointmentController extends Controller
                 'recurrence_type' => $request->recurrence_type,
                 'recurrence_count' => $request->recurrence_count,
                 'ai_summary' => $summary, // ✅ ATTACHED HERE
+                'reason' => $request->reason,
+                'symptoms' => $request->symptoms,
             ]);
 
             // ===============================
