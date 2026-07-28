@@ -1,6 +1,7 @@
 <x-app-layout>
 <div class="max-w-2xl mx-auto p-4">
 
+    <!-- HEADER -->
     <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold">💭 AI Medical Assistant</h2>
 
@@ -10,7 +11,8 @@
         </button>
     </div>
 
-    <div div class="mb-3">
+    <!-- DOCTOR PERSONALITY -->
+    <div class="mb-3">
         <label class="block font-semibold mb-1">🧑‍⚕️ Doctor Style</label>
         <select id="personality" class="border p-2 rounded w-full">
             <option value="friendly">😊 Friendly Doctor</option>
@@ -20,29 +22,41 @@
         </select>
     </div>
 
+    <!-- CHAT BOX -->
     <div id="chat-box" class="border p-4 h-96 overflow-y-auto mb-3 bg-gray-50">
-
         @foreach($messages as $msg)
             <div class="mb-2">
                 <strong>{{ $msg->role === 'user' ? 'You' : 'AI' }}:</strong>
                 <p>{{ $msg->message }}</p>
             </div>
         @endforeach
-
     </div>
 
+    <!-- INPUT -->
     <form id="chat-form">
         @csrf
         <div class="flex gap-2">
-             <input type="text" id="message" class="w-full border p-2 rounded"
-                    placeholder="Type or speak your symptoms...">
+            <input type="text" id="message"
+                   class="w-full border p-2 rounded"
+                   placeholder="Type or speak your symptoms...">
 
-             <button type="button" id="mic-btn"
-                     class="bg-blue-600 text-white px-3 rounded">
-                  🎙️
-             </button>
+            <button type="button" id="mic-btn"
+                    class="bg-blue-600 text-white px-3 rounded">
+                🎙️
+            </button>
         </div>
     </form>
+
+    <!-- DOCTOR SUMMARY BUTTON -->
+    <button onclick="getDoctorSummary()"
+            class="bg-blue-600 text-white px-4 py-2 rounded mt-3">
+        🧾 Generate Doctor Summary
+    </button>
+
+    <!-- SUMMARY BOX -->
+    <div id="summaryBox"
+         class="mt-4 p-4 border rounded bg-gray-100 whitespace-pre-line">
+    </div>
 
 </div>
 
@@ -60,15 +74,15 @@ document.getElementById('chat-form').addEventListener('submit', function(e) {
 
     let box = document.getElementById('chat-box');
 
-    // 🧑 User message
+    // USER MESSAGE
     box.innerHTML += `
         <div class="mb-2">
             <strong>You:</strong>
-            <p>${message}</p>
+            <p>${escapeHtml(message)}</p>
         </div>
     `;
 
-    // 🤖 Typing indicator
+    // TYPING INDICATOR
     let typingId = 'typing-' + Date.now();
 
     box.innerHTML += `
@@ -87,27 +101,22 @@ document.getElementById('chat-form').addEventListener('submit', function(e) {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
-        body: JSON.stringify({ 
-            message,
-            personality
-        })
+        body: JSON.stringify({ message, personality })
     })
     .then(res => res.json())
     .then(data => {
 
-        // ❌ Remove typing
-        let typingEl = document.getElementById(typingId);
-        if (typingEl) typingEl.remove();
+        document.getElementById(typingId)?.remove();
 
-        // 🤖 AI reply
+        // AI RESPONSE
         box.innerHTML += `
             <div class="mb-2">
                 <strong>AI:</strong>
-                <p>${data.reply}</p>
+                <p>${escapeHtml(data.reply)}</p>
             </div>
         `;
 
-        // 🚨 Urgency UI
+        // URGENCY DISPLAY
         if (data.urgency) {
             let color = 'green';
             let label = '🟢 Low';
@@ -125,20 +134,21 @@ document.getElementById('chat-form').addEventListener('submit', function(e) {
                     <strong>Urgency:</strong> ${label}
                 </div>
             `;
-            // 🔊 Speak AI response
-            speak(data.reply);
         }
 
-        // 👨‍⚕️ Doctors
+        // 🔊 SPEAK ALWAYS (not only urgency)
+        speak(data.reply);
+
+        // DOCTOR RECOMMENDATIONS
         if (data.doctors && data.doctors.length > 0) {
             let doctorsHtml = `<div class="mt-3"><strong>👨‍⚕️ Recommended Doctors:</strong>`;
 
             data.doctors.forEach(doc => {
                 doctorsHtml += `
                     <div class="border p-3 mt-2 rounded">
-                        <p class="font-bold">${doc.name}</p>
-                        <p>${doc.specialty}</p>
-                        <p class="text-sm text-gray-600">${doc.location ?? ''}</p>
+                        <p class="font-bold">${escapeHtml(doc.name)}</p>
+                        <p>${escapeHtml(doc.specialty)}</p>
+                        <p class="text-sm text-gray-600">${escapeHtml(doc.location ?? '')}</p>
 
                         <a href="/appointments/create?doctor_id=${doc.id}"
                            class="bg-green-600 text-white px-3 py-1 rounded mt-1 inline-block">
@@ -152,11 +162,41 @@ document.getElementById('chat-form').addEventListener('submit', function(e) {
             box.innerHTML += doctorsHtml;
         }
 
-        // 🧹 Clear input AFTER send
         messageInput.value = '';
         box.scrollTop = box.scrollHeight;
     });
 });
+
+// Escape HTML (security fix)
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.innerText = text;
+    return div.innerHTML;
+}
+</script>
+
+<script>
+// ===============================
+// 🧾 DOCTOR SUMMARY
+// ===============================
+async function getDoctorSummary() {
+    const box = document.getElementById('summaryBox');
+    box.innerText = 'Generating summary... ⏳';
+
+    try {
+        const res = await fetch('/doctor-summary', {
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        });
+
+        const data = await res.json();
+        box.innerText = data.summary;
+
+    } catch (err) {
+        box.innerText = 'Failed to generate summary ❌';
+    }
+}
 </script>
 
 <script>
@@ -181,11 +221,8 @@ if ('webkitSpeechRecognition' in window) {
 
     recognition.onresult = function(event) {
         let transcript = event.results[0][0].transcript;
-
-        // ✍️ Put speech into input
         messageInput.value = transcript;
 
-        // 🚀 Auto-send after short delay
         setTimeout(() => {
             document.getElementById('chat-form')
                 .dispatchEvent(new Event('submit'));
@@ -211,7 +248,7 @@ if ('webkitSpeechRecognition' in window) {
 
 <script>
 // ===============================
-// 🔊 AI VOICE REPLY (Text-to-Speech)
+// 🔊 AI VOICE REPLY
 // ===============================
 let voiceEnabled = true;
 
@@ -225,20 +262,16 @@ voiceToggle.addEventListener('click', () => {
         : '🔇 Voice OFF';
 });
 
-// Speak function
 function speak(text) {
     if (!voiceEnabled) return;
-
     if (!('speechSynthesis' in window)) return;
 
     const speech = new SpeechSynthesisUtterance(text);
 
-    // 🧠 Voice tuning (more human-like)
     speech.rate = 0.95;
     speech.pitch = 1;
     speech.volume = 1;
 
-    // Optional: choose a nicer voice
     const voices = speechSynthesis.getVoices();
     const preferredVoice = voices.find(v =>
         v.name.includes('Google') || v.name.includes('Female')
@@ -248,7 +281,7 @@ function speak(text) {
         speech.voice = preferredVoice;
     }
 
-    speechSynthesis.cancel(); // stop previous speech
+    speechSynthesis.cancel();
     speechSynthesis.speak(speech);
 }
 </script>

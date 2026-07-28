@@ -16,6 +16,7 @@ use App\Http\Controllers\StripePortalController;
 use App\Http\Controller\DoctorController;
 use App\Http\Controller\SymptomCheckerController;
 use App\Http\Controller\AiChatController;
+use App\Http\Controllers\DoctorSummaryController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -129,6 +130,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/ai-chat', [AiChatController::class, 'index'])->name('ai.chat');
 
     Route::post('/ai-chat/send', [AiChatController::class, 'send']);
+
+    Route::get('/doctor-summary', [DoctorSummaryController::class, 'generate'])->middleware('auth');
 
   
     /*
