@@ -100,7 +100,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/doctor/availability', [DoctorAvailabilityController::class, 'index'])->name('doctor.availability');
     Route::post('/doctor/availability', [DoctorAvailabilityController::class, 'store'])->name('doctor.availability.store');
 
-    Route::get('/doctor/dashboard', [DoctorController::class, 'dashboard'])->name('doctor.dashboard');
+    Route::get('/doctor/dashboard', [DoctorController::class, 'dashboard'])->name('doctor.dashboard')->middleware('auth');
 
     Route::post('/doctor/approve/{id}', [DoctorController::class, 'approve'])->name('doctor.approve');
 

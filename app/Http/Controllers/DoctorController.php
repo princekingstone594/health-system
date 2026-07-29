@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Appointment;
-use Carbon\Carbon;
 use App\Models\FollowUp;
+use Carbon\Carbon;
 
 class DoctorController extends Controller
 {
@@ -13,13 +13,18 @@ class DoctorController extends Controller
     {
         $doctorId = auth()->id();
 
-        // 📅 Today's appointments
+        // 📊 Stats
+        $totalAppointments = Appointment::where('doctor_id', $doctorId)->count();
+
+        // 📅 Today
         $todayAppointments = Appointment::where('doctor_id', $doctorId)
             ->whereDate('date', Carbon::today())
             ->orderBy('time')
             ->get();
 
-        // 📆 Upcoming appointments
+        $todayCount = $todayAppointments->count();
+
+        // 📆 Upcoming
         $upcomingAppointments = Appointment::where('doctor_id', $doctorId)
             ->whereDate('date', '>', Carbon::today())
             ->orderBy('date')
@@ -27,16 +32,41 @@ class DoctorController extends Controller
             ->take(10)
             ->get();
 
-        // 📊 Stats
-        $totalAppointments = Appointment::where('doctor_id', $doctorId)->count();
+        // 🟡 Pending
+        $pending = Appointment::where('doctor_id', $doctorId)
+            ->where('status', 'pending')
+            ->latest()
+            ->get();
 
-        $todayCount = $todayAppointments->count();
+        // 🔵 Confirmed Today (approved = confirmed)
+        $confirmedToday = Appointment::where('doctor_id', $doctorId)
+            ->where('status', 'approved')
+            ->whereDate('date', Carbon::today())
+            ->get();
+
+        // 🟢 Completed
+        $completed = Appointment::where('doctor_id', $doctorId)
+            ->where('status', 'completed')
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        // 🔴 Cancelled
+        $cancelled = Appointment::where('doctor_id', $doctorId)
+            ->where('status', 'cancelled')
+            ->latest()
+            ->limit(10)
+            ->get();
 
         return view('doctor.dashboard', compact(
-            'todayAppointments',
-            'upcomingAppointments',
             'totalAppointments',
-            'todayCount'
+            'todayAppointments',
+            'todayCount',
+            'upcomingAppointments',
+            'pending',
+            'confirmedToday',
+            'completed',
+            'cancelled'
         ));
     }
 
@@ -47,13 +77,12 @@ class DoctorController extends Controller
     {
         $appointment = Appointment::findOrFail($id);
 
-        // Ensure doctor owns this appointment
         if ($appointment->doctor_id !== auth()->id()) {
             abort(403);
         }
 
         $request->validate([
-            'status' => 'required|in:approved,cancelled,completed',
+            'status' => 'required|in:pending,approved,completed,cancelled',
         ]);
 
         $appointment->update([
@@ -67,60 +96,32 @@ class DoctorController extends Controller
     {
         $doctorId = auth()->id();
 
-        $appointments = \App\Models\Appointment::where('doctor_id', $doctorId)
+        $appointments = Appointment::where('doctor_id', $doctorId)
             ->get()
             ->map(function ($appt) {
-                return[
-                    'title' => 'Patient #' . $patient_id,
+                return [
+                    'title' => 'Patient #' . $appt->patient_id,
                     'start' => $appt->date . 'T' . $appt->time,
                     'color' => $this->getStatusColor($appt->status),
                 ];
             });
+
         return view('doctor.calendar', compact('appointments'));
     }
 
-    /**
-     * Color by status
-     */
     private function getStatusColor($status)
     {
         return match ($status) {
-            'approved' => '#16a34a', // green
-            'pending' => '#f59e0b', // yellow
-            'cancelled' => '#dc2626', // red
-            'default' => '#3b82f6', // blue
+            'approved' => '#16a34a',
+            'pending' => '#f59e0b',
+            'cancelled' => '#dc2626',
+            default => '#3b82f6',
         };
-    }
-
-    public function approve($id)
-    {
-        $appointment = Appointment::findOrFail($id);
-
-        $appointment->status = 'approved';
-        $appointment->save();
-
-        // notify patient
-        $appointment->user->notify(new AppointmentUpdated($appointment, 'reschedule'));
-
-        return back()->with('success', 'Appointment approved.');
-    }
-
-    public function reject($id)
-    {
-        $appointment = Appointment::findOrFail($id);
-
-        $appointment->status = 'rejected';
-        $appointment->save();
-
-        // notify patient
-        $appointment->user->notify(new AppointmentUpdated($appointment, 'cancel'));
-
-        return back()->with('success', 'Appointment rejected.');
     }
 
     public function addNotes($id)
     {
-        $appointment = Appointment::findOfFail($id);
+        $appointment = Appointment::findOrFail($id);
 
         if ($appointment->doctor_id !== auth()->id()) {
             abort(403);
@@ -138,7 +139,7 @@ class DoctorController extends Controller
         }
 
         $request->validate([
-            'doctor_notes'=> 'nullable|string',
+            'doctor_notes' => 'nullable|string',
             'diagnosis' => 'nullable|string',
             'prescription' => 'nullable|string',
             'is_shared_with_patient' => 'required|boolean'
@@ -152,52 +153,33 @@ class DoctorController extends Controller
             'status' => 'completed'
         ]);
 
-        $user = $appointment->patient;
+        // 🔔 Notify patient
+        $appointment->patient->notify(new \App\Notifications\DoctorNotesAdded($appointment));
 
-        $user->notify(new \App\Notifications\DoctorNotesAdded($appointment));
-
-        return redirect()->back()->with('success', 'Notes saved successfully.');
-    }
-
-    public function updateProfile(Request $request)
-    {
-       auth()->user()->update($request->only([
-        'specialty',
-        'qualifications',
-        'location',
-        'experience_years'
-       ]));
-
-       return back()->with('success', 'Profile updated');
-    }
-
-    public function updateMedical(Request $request, $id)
-    {
-        $appointment = \App\Models\Appointment::findOrFail($id);
-
-        // 🔒 Security check
-        if ($appointment->doctor_id !== auth()->id()) {
-            abort(403);
-        }
-
-        $request->validate([
-            'doctor_notes' => 'nullable->doctor_notes',
-            'diagnosis' => $request->diagnosis,
-            'prescription' => $request->prescription,
-            'status' => 'completed', // auto mark done
-        ]);
-
+        // 🤖 Auto follow-up
         FollowUp::create([
             'appointment_id' => $appointment->id,
             'patient_id' => $appointment->patient_id,
             'message' => $this->generateFollowUpMessage($appointment),
         ]);
 
-        return back()->with('success', 'Medical record updated.');
+        return back()->with('success', 'Notes saved successfully.');
     }
 
     private function generateFollowUpMessage($appointment)
     {
         return "Hi {$appointment->patient->name}, how are you feeling after your visit? Are your symptoms improving?";
+    }
+
+    public function updateProfile(Request $request)
+    {
+        auth()->user()->update($request->only([
+            'specialty',
+            'qualifications',
+            'location',
+            'experience_years'
+        ]));
+
+        return back()->with('success', 'Profile updated');
     }
 }
