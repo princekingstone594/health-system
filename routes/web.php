@@ -140,6 +140,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/medical-files/{id}/download', [MedicalFileController::class, 'destroy'])->name('medical-files.delete');
     Route::delete('/medical-files/{id}', [MedicalFileController::class, 'destroy'])->name('medical-files.delete');
 
+    Route::post('/appointment/{id}/medical', [DoctorController::class, 'updateMedical'])->name('appointments.medical.update');
+
   
     /*
     |--------------------------------------------------------------------------

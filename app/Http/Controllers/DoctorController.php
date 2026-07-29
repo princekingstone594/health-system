@@ -169,4 +169,23 @@ class DoctorController extends Controller
 
        return back()->with('success', 'Profile updated');
     }
+
+    public function updateMedical(Request $request, $id)
+    {
+        $appointment = \App\Models\Appointment::findOrFail($id);
+
+        // 🔒 Security check
+        if ($appointment->doctor_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'doctor_notes' => 'nullable->doctor_notes',
+            'diagnosis' => $request->diagnosis,
+            'prescription' => $request->prescription,
+            'status' => 'completed', // auto mark done
+        ]);
+
+        return back()->with('success', 'Medical record updated.');
+    }
 }
