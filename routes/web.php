@@ -143,7 +143,10 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/appointment/{id}/medical', [DoctorController::class, 'updateMedical'])->name('appointments.medical.update');
 
-    Route::get('/appointments/{id}/prescription', [PrescriptionController::class, download])->name('appoinment.prescription.download');
+    Route::get('/appointments/{id}/prescription', [PrescriptionController::class, 'download'])->name('appoinment.prescription.download');
+
+    Route::get('/follow-ups', [FollowUpController::class, 'index'])->name('followups.index');
+    Route::post('/follow-ups/{id}', [FollowUpController::class, 'reply'])->name('followups.reply');
 
   
     /*

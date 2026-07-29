@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Appointment;
 use Carbon\Carbon;
+use App\Models\FollowUp;
 
 class DoctorController extends Controller
 {
@@ -186,6 +187,17 @@ class DoctorController extends Controller
             'status' => 'completed', // auto mark done
         ]);
 
+        FollowUp::create([
+            'appointment_id' => $appointment->id,
+            'patient_id' => $appointment->patient_id,
+            'message' => $this->generateFollowUpMessage($appointment),
+        ]);
+
         return back()->with('success', 'Medical record updated.');
+    }
+
+    private function generateFollowUpMessage($appointment)
+    {
+        return "Hi {$appointment->patient->name}, how are you feeling after your visit? Are your symptoms improving?";
     }
 }
