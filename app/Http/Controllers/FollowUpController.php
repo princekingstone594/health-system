@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\FollowUp;
+use App\Service\AiFollowUpService;
 
 class FollowUpController extends Controller
 {
@@ -22,7 +23,7 @@ class FollowUpController extends Controller
     {
         $followUp = FollowUp::findOrFail($id);
 
-        // 🔐 Security
+        // 🔐 Security check
         if ($followUp->patient_id !== auth()->id()) {
             abort(403);
         }
@@ -36,7 +37,7 @@ class FollowUpController extends Controller
             'status' => 'answered'
         ]);
 
-        // 🧠 STEP 7 LOGIC (AI ANALYSIS)
+        // 🧠 STEP 7 — AI ANALYSIS
         $this->analyzeResponse($followUp);
 
         return back()->with('success', 'Response submitted.');
@@ -47,32 +48,21 @@ class FollowUpController extends Controller
     {
         $text = strtolower($followUp->response);
 
-        if (
-            str_contains($text, 'worse') ||
-            str_contains($text, 'pain') ||
-            str_contains($text, 'not better')
-        ) {
-            // 🚨 Flag as risky
-            $followUp->update([
-                'status' => 'needs_attention'
-            ]);
-        }
-    }
-
-    private function analyzeResponse($followUp)
-    {
-        $text = strtolower($followUp->response);
-
-        //🚨 Detect risky words
+        // 🚨 Detect risky keywords
         if (
             str_contains($text, 'worse') ||
             str_contains($text, 'pain') ||
             str_contains($text, 'not better') ||
             str_contains($text, 'still sick')
         ) {
-            // Flag for doctor attentiom
+            // Flag for doctor attention
             $followUp->update([
                 'status' => 'needs_attention'
+            ]);
+        } else {
+            // ✅ Mark safe if no risk detected
+            $followUp->update([
+                'status' => 'reviewed'
             ]);
         }
     }
