@@ -148,6 +148,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/follow-ups', [FollowUpController::class, 'index'])->name('followups.index');
     Route::post('/follow-ups/{id}', [FollowUpController::class, 'reply'])->name('followups.reply');
 
+    Route::view('/privacy-policy', 'policies.privacy')->name('privacy');
+    Route::view('/terms', 'policies.terms')->name('terms');
+
   
     /*
     |--------------------------------------------------------------------------

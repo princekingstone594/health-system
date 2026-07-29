@@ -108,6 +108,12 @@
 
     </div>
 
+    <div class="text-center text-sm mt-10 text-gray-500">
+        <a href="{{ route('privacy') }}" class="mr-4">Privacy Policy</a>
+        <a href="{{ route('terms') }}">Terms & Conditions</a>
+    </div>
+
+
 </div>
 
 <script>
