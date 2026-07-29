@@ -14,12 +14,6 @@
             </div>
         @endif
 
-        @if(session('error'))
-            <div class="bg-red-100 text-red-700 p-3 rounded">
-                {{ session('error') }}
-            </div>
-        @endif
-
         {{-- 📊 Stats --}}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
@@ -42,7 +36,7 @@
 
         </div>
 
-        {{-- 📅 Upcoming Appointments --}}
+        {{-- 📅 Upcoming --}}
         <div class="bg-white p-6 rounded shadow">
             <h3 class="text-lg font-semibold mb-4">Upcoming Appointments</h3>
 
@@ -60,18 +54,11 @@
 
                     <div class="flex flex-col items-end gap-2">
 
-                        {{-- Status --}}
-                        <span class="px-2 py-1 text-xs rounded
-                            @if($appt->status == 'approved') bg-green-100 text-green-700
-                            @elseif($appt->status == 'pending') bg-yellow-100 text-yellow-700
-                            @elseif($appt->status == 'cancelled') bg-red-100 text-red-700
-                            @else bg-gray-100 text-gray-700
-                            @endif
-                        ">
+                        <span class="text-xs px-2 py-1 rounded bg-gray-100">
                             {{ ucfirst($appt->status) }}
                         </span>
 
-                        {{-- Payment --}}
+                        {{-- 💳 Payment --}}
                         @if($appt->is_paid)
                             <span class="text-green-600 text-sm font-semibold">Paid</span>
                         @else
@@ -81,118 +68,72 @@
                             </a>
                         @endif
 
-                        {{-- Actions --}}
-                        @if($appt->status !== 'cancelled' && $appt->status !== 'completed')
-                            <div class="flex gap-2 mt-1">
-
-                                <form method="POST" action="{{ route('appointments.cancel', $appt->id) }}">
-                                    @csrf
-                                    <button
-                                        onclick="return confirm('Cancel this appointment?')"
-                                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs">
-                                        Cancel
-                                    </button>
-                                </form>
-
-                                <a href="{{ route('appointments.reschedule.form', $appt->id) }}"
-                                   class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs">
-                                    Reschedule
-                                </a>
-
-                            </div>
-                        @endif
-
                     </div>
                 </div>
             @empty
-                <p class="text-gray-500">No upcoming appointments.</p>
+                <p>No upcoming appointments.</p>
             @endforelse
         </div>
 
-        {{-- 🕘 Recent Appointments + Reviews --}}
+        {{-- 🕘 HISTORY + MEDICAL --}}
         <div class="bg-white p-6 rounded shadow">
-            <h3 class="text-lg font-semibold mb-4">Recent History</h3>
+            <h3 class="text-lg font-semibold mb-4">Medical History</h3>
 
             @forelse($pastAppointments as $appt)
-                <div class="border-b py-4">
+                <div class="border-b py-4 space-y-2">
 
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-semibold">
-                                Dr. {{ $appt->doctor->name ?? 'Doctor' }}
-                            </p>
-                            <p class="text-sm text-gray-500">
-                                {{ $appt->date }} at {{ $appt->time }}
-                            </p>
+                    <p class="font-semibold">
+                        Dr. {{ $appt->doctor->name ?? 'Doctor' }}
+                    </p>
+
+                    <p class="text-sm text-gray-500">
+                        {{ $appt->date }} at {{ $appt->time }}
+                    </p>
+
+                    {{-- 📝 Diagnosis --}}
+                    @if($appt->is_shared_with_patient && $appt->diagnosis)
+                        <div class="bg-gray-50 p-3 rounded">
+                            <p class="text-sm"><strong>Diagnosis:</strong> {{ $appt->diagnosis }}</p>
                         </div>
-
-                        <span class="text-sm capitalize
-                            @if($appt->status == 'cancelled') text-red-500
-                            @elseif($appt->status == 'completed') text-green-500
-                            @else text-gray-600
-                            @endif
-                        ">
-                            {{ $appt->status }}
-                        </span>
-                    </div>
-
-                    {{-- ⭐ REVIEW FORM --}}
-                    @php
-                        $alreadyReviewed = \App\Models\Review::where('appointment_id', $appt->id)->exists();
-                    @endphp
-
-                    @if($appt->status === 'approved' && now()->gt($appt->date) && !$alreadyReviewed)
-                        <form method="POST" action="{{ route('reviews.store') }}" class="mt-3 flex items-center gap-2">
-                            @csrf
-
-                            <input type="hidden" name="appointment_id" value="{{ $appt->id }}">
-
-                            <select name="rating" class="border p-1 rounded" required>
-                                <option value="">Rate</option>
-                                <option value="5">⭐⭐⭐⭐⭐</option>
-                                <option value="4">⭐⭐⭐⭐</option>
-                                <option value="3">⭐⭐⭐</option>
-                                <option value="2">⭐⭐</option>
-                                <option value="1">⭐</option>
-                            </select>
-
-                            <input type="text" name="comment"
-                                   placeholder="Write a review..."
-                                   class="border p-1 rounded w-64">
-
-                            <button class="bg-green-600 text-white px-3 py-1 rounded text-sm">
-                                Submit
-                            </button>
-                        </form>
-                    @elseif($alreadyReviewed)
-                        <p class="text-green-600 text-sm mt-2">✅ You already reviewed this appointment</p>
                     @endif
 
-                    @if($appt->diagnosis && $appt->is_shared_with_patient)
-                        <div class="mt-2 p-3 bg-gray-50 rounded">
-
-                            <p class="text-sm"><strong>Diagnosis:</strong> {{ $appt->diagnosis }}</p>
-
-                            @if($appt->prescription)
-                                <p class="text-sm mt-1">
-                                    <strong>Precription:</strong> {{ $appt->prescription }}
-                                </p>
-                            @endif
+                    {{-- 💊 Prescription --}}
+                    @if($appt->is_shared_with_patient && $appt->prescription)
+                        <div class="bg-gray-50 p-3 rounded">
+                            <p class="text-sm"><strong>Prescription:</strong> {{ $appt->prescription }}</p>
                         </div>
+
+                        <a href="{{ route('prescription.download', $appt->id) }}"
+                           class="text-blue-600 text-sm underline">
+                            📄 Download Prescription
+                        </a>
                     @endif
 
                 </div>
             @empty
-                <p class="text-gray-500">No past appointments.</p>
+                <p>No history yet.</p>
             @endforelse
         </div>
 
-        {{-- 🚀 Action --}}
-        <div class="flex justify-end">
-            <a href="{{ route('booking.index') }}"
-               class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700">
-                + Book Appointment
-            </a>
+        {{-- 🤖 AI FOLLOW-UPS --}}
+        <div class="bg-white p-6 rounded shadow">
+            <h3 class="text-lg font-semibold text-purple-700 mb-4">
+                🤖 AI Follow-Ups
+            </h3>
+
+            @forelse($followUps as $follow)
+                <div class="border-b py-3">
+                    <p class="text-sm text-gray-700">
+                        {{ $follow->message }}
+                    </p>
+
+                    <p class="text-xs text-gray-400">
+                        {{ $follow->created_at->diffForHumans() }}
+                    </p>
+                </div>
+            @empty
+                <p class="text-gray-500">No follow-ups yet.</p>
+            @endforelse
         </div>
 
     </div>

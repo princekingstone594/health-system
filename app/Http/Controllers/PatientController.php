@@ -4,10 +4,50 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Patient;
+use App\Models\Appointment;
+use App\Models\FollowUp;
 
 class PatientController extends Controller
 {
-    // List patients
+    /**
+     * 👤 PATIENT DASHBOARD (NEW - MAIN FEATURE)
+     */
+    public function dashboard()
+    {
+        $patientId = auth()->id();
+
+        $appointments = Appointment::where('patient_id', $patientId)->get();
+
+        $totalAppointments = $appointments->count();
+
+        $upcomingAppointments = $appointments
+            ->whereIn('status', ['pending', 'approved'])
+            ->sortBy('date');
+
+        $upcomingCount = $upcomingAppointments->count();
+
+        $pastAppointments = $appointments
+            ->whereIn('status', ['completed', 'cancelled', 'rejected'])
+            ->sortByDesc('date');
+
+        // 🤖 AI FOLLOW-UPS
+        $followUps = FollowUp::where('patient_id', $patientId)
+            ->latest()
+            ->get();
+
+        return view('patient.dashboard', compact(
+            'totalAppointments',
+            'upcomingAppointments',
+            'upcomingCount',
+            'pastAppointments',
+            'followUps'
+        ));
+    }
+
+    // ==========================
+    // YOUR ORIGINAL CRUD (CLEANED)
+    // ==========================
+
     public function index(Request $request)
     {
         $search = $request->input('search');
@@ -22,13 +62,11 @@ class PatientController extends Controller
         return view('patients.index', compact('patients', 'search'));
     }
 
-    // Show create form
     public function create()
     {
         return view('patients.create');
     }
 
-    // Store patient
     public function store(Request $request)
     {
         $request->validate([
@@ -39,16 +77,15 @@ class PatientController extends Controller
 
         $patient = Patient::create($request->all());
 
-        //return JSON for AJAX
-        return response()->json($patient);
-
-        Patient::create($request->all());
+        // If using AJAX
+        if ($request->expectsJson()) {
+            return response()->json($patient);
+        }
 
         return redirect()->route('patients.index')
             ->with('success', 'Patient added successfully!');
     }
 
-    // Show single patient
     public function show(Patient $patient)
     {
         $appointments = $patient->appointments;
@@ -56,13 +93,11 @@ class PatientController extends Controller
         return view('patients.show', compact('patient', 'appointments'));
     }
 
-    // Edit form
     public function edit(Patient $patient)
     {
         return view('patients.edit', compact('patient'));
     }
 
-    // Update
     public function update(Request $request, Patient $patient)
     {
         $request->validate([
@@ -77,7 +112,6 @@ class PatientController extends Controller
             ->with('success', 'Patient updated successfully');
     }
 
-    // Delete
     public function destroy(Patient $patient)
     {
         $patient->delete();
