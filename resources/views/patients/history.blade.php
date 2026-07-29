@@ -88,6 +88,11 @@
                             </div>
                         @endif
 
+                        <a href="{{ route('appointments.prescription.download', $appointment->id) }}"
+                           class="inline-block mt-3 bg-blue-600 text-white px-3 rounded text-sm">
+                             📃 Download Prescription
+                        </a>
+
                         {{-- ============================= --}}
                         {{-- 📎 FILE UPLOAD --}}
                         {{-- ============================= --}}

@@ -18,6 +18,7 @@ use App\Http\Controller\SymptomCheckerController;
 use App\Http\Controller\AiChatController;
 use App\Http\Controllers\DoctorSummaryController;
 use App\Http\Controllers\MedicalFileController;
+use App\Http\Controller\PrescriptionController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -141,6 +142,8 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/medical-files/{id}', [MedicalFileController::class, 'destroy'])->name('medical-files.delete');
 
     Route::post('/appointment/{id}/medical', [DoctorController::class, 'updateMedical'])->name('appointments.medical.update');
+
+    Route::get('/appointments/{id}/prescription', [PrescriptionController::class, download])->name('appoinment.prescription.download');
 
   
     /*
