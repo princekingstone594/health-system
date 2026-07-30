@@ -3,122 +3,91 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name', 'Health System') }}</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ config('app.name', 'MedFlow') }} — {{ $header ?? 'Dashboard' }}</title>
 
-    <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
 
-    <!-- Feather Icons -->
-    <script src="https://unpkg.com/feather-icons"></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="bg-gray-100 font-sans antialiased">
+<body class="font-sans antialiased" x-data="{ sidebarOpen: false }">
 
-<div class="flex h-screen overflow-hidden">
+<div class="flex h-screen overflow-hidden bg-surface-muted">
 
-    <!-- ===================== -->
-    <!-- SIDEBAR -->
-    <!-- ===================== -->
-    <aside class="w-64 bg-gray-900 text-white flex flex-col">
+    {{-- Mobile overlay --}}
+    <div x-show="sidebarOpen"
+         x-transition:enter="transition-opacity ease-linear duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity ease-linear duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click="sidebarOpen = false"
+         class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden"
+         style="display: none;">
+    </div>
 
-        <!-- Logo -->
-        <div class="p-6 text-xl font-bold border-b border-gray-800 tracking-wide">
-            🏥 Health System
-        </div>
+    {{-- Sidebar --}}
+    <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+           class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-slate-900 shadow-sidebar transition-transform duration-300 ease-in-out lg:static lg:translate-x-0">
 
-        <!-- Navigation -->
-        <nav class="flex-1 p-4 space-y-2 text-sm">
-
-            <!-- Dashboard -->
-            <a href="{{ route('dashboard') }}"
-               class="flex items-center gap-3 px-4 py-2 rounded-lg transition
-               {{ request()->routeIs('dashboard') ? 'bg-gray-800' : 'hover:bg-gray-800' }}">
-                <i data-feather="home" class="w-4 h-4"></i>
-                Dashboard
-            </a>
-
-            <!-- Patients -->
-            <a href="{{ route('patients.index') }}"
-               class="flex items-center gap-3 px-4 py-2 rounded-lg transition
-               {{ request()->routeIs('patients.*') ? 'bg-gray-800' : 'hover:bg-gray-800' }}">
-                <i data-feather="users" class="w-4 h-4"></i>
-                Patients
-            </a>
-
-            <!-- Appointments -->
-            <a href="{{ route('appointments.create') }}"
-               class="flex items-center gap-3 px-4 py-2 rounded-lg transition
-               {{ request()->routeIs('appointments.*') ? 'bg-gray-800' : 'hover:bg-gray-800' }}">
-                <i data-feather="calendar" class="w-4 h-4"></i>
-                Appointments
-            </a>
-
-            <!-- Availability -->
-            <a href="{{ route('availability.index') }}"
-               class="flex items-center gap-3 px-4 py-2 rounded-lg transition
-               {{ request()->routeIs('availability.*') ? 'bg-gray-800' : 'hover:bg-gray-800' }}">
-                <i data-feather="clock" class="w-4 h-4"></i>
-                Availability
-            </a>
-
-        </nav>
-
-        <!-- User + Logout -->
-        <div class="p-4 border-t border-gray-800">
-
-            <div class="text-sm text-gray-400 mb-3">
-                {{ Auth::user()->name ?? 'Guest' }}
-            </div>
-
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit"
-                    class="w-full flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-800 transition text-sm">
-                    <i data-feather="log-out" class="w-4 h-4"></i>
-                    Logout
-                </button>
-            </form>
-
-        </div>
+        @include('layouts.partials.sidebar')
 
     </aside>
 
-    <!-- ===================== -->
-    <!-- MAIN CONTENT -->
-    <!-- ===================== -->
-    <div class="flex-1 flex flex-col">
+    {{-- Main area --}}
+    <div class="flex flex-1 flex-col overflow-hidden">
 
-        <!-- Topbar -->
-        <header class="bg-white border-b px-6 py-4 flex justify-between items-center">
+        {{-- Topbar --}}
+        <header class="flex h-16 shrink-0 items-center justify-between border-b border-surface-border bg-white px-4 sm:px-6">
 
-            <h1 class="text-lg font-semibold text-gray-800">
-                {{ $header ?? 'Dashboard' }}
-            </h1>
+            <div class="flex items-center gap-4">
+                {{-- Mobile menu toggle --}}
+                <button @click="sidebarOpen = !sidebarOpen"
+                        class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 lg:hidden">
+                    <x-icon name="menu" class="w-5 h-5" />
+                </button>
 
-            <div class="flex items-center gap-4 text-sm text-gray-600">
-                <span>{{ Auth::user()->email ?? '' }}</span>
+                <div>
+                    @isset($header)
+                        <div class="page-title text-lg sm:text-xl">{!! $header !!}</div>
+                    @else
+                        <h1 class="page-title text-lg sm:text-xl">Dashboard</h1>
+                    @endisset
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span class="hidden sm:inline-flex badge-neutral capitalize">{{ auth()->user()->role ?? '' }}</span>
+                <div class="hidden sm:flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">
+                    {{ collect(explode(' ', auth()->user()->name ?? 'U'))->map(fn($w) => strtoupper(substr($w,0,1)))->take(2)->join('') }}
+                </div>
             </div>
 
         </header>
 
-        <!-- Page Content -->
-        <main class="flex-1 overflow-y-auto p-6">
-            {{ $slot }}
+        {{-- Page content --}}
+        <main class="flex-1 overflow-y-auto">
+            <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+                {{ $slot }}
+            </div>
         </main>
 
+        {{-- Footer --}}
+        <footer class="shrink-0 border-t border-surface-border bg-white px-6 py-3">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+                <span>&copy; {{ date('Y') }} {{ config('app.name', 'MedFlow') }}</span>
+                <div class="flex gap-4">
+                    <a href="{{ route('privacy') }}" class="hover:text-slate-600 transition">Privacy</a>
+                    <a href="{{ route('terms') }}" class="hover:text-slate-600 transition">Terms</a>
+                </div>
+            </div>
+        </footer>
+
     </div>
-
-    <div class="text-center text-sm mt-10 text-gray-500">
-        <a href="{{ route('privacy') }}" class="mr-4">Privacy Policy</a>
-        <a href="{{ route('terms') }}">Terms & Conditions</a>
-    </div>
-
-
 </div>
-
-<script>
-    feather.replace()
-</script>
 
 </body>
 </html>
