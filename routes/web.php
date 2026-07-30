@@ -151,6 +151,8 @@ Route::middleware(['auth'])->group(function () {
     Route::view('/privacy-policy', 'policies.privacy')->name('privacy');
     Route::view('/terms', 'policies.terms')->name('terms');
 
+    Route::post('/followup/generate/{appointment}', [FollowUpController::class, 'generate'])->name('followup.generate');
+
   
     /*
     |--------------------------------------------------------------------------

@@ -58,6 +58,13 @@
                             Add Notes
                         </a>
 
+                        <form method="POST" action="{{ route('followup.generate', $appointment->id) }}">
+                            @csrf 
+                            <button class="bg-purple-600 text-white px-3 py-1 rounded text-xs">
+                                🤖 Generate AI Follow-Up 
+                           </button>
+                       </form>
+
                     </div>
                 </div>
             @empty
