@@ -10,15 +10,20 @@ use App\Http\Controllers\DoctorAvailabilityController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
-use App\Http\Controller\StripeController;
-use App\Http\Controller\AdminController;
+use App\Http\Controllers\StripeController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\StripePortalController;
-use App\Http\Controller\DoctorController;
-use App\Http\Controller\SymptomCheckerController;
-use App\Http\Controller\AiChatController;
+use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\SymptomCheckerController;
+use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\DoctorSummaryController;
 use App\Http\Controllers\MedicalFileController;
-use App\Http\Controller\PrescriptionController;
+use App\Http\Controllers\PrescriptionController;
+use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\MedicalRecordController;
+use App\Http\Controllers\PatientHistoryController;
+use App\Http\Controllers\FollowUpController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -64,8 +69,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/appointment/slots', [AppointmentController::class, 'slots']);
 
-    Route::put('/appointments/{appointmet}/reschedule',
-       [App\Http\Controllers\AppoitnmentController::class, 'reschedule'])->name('appointments.reschedule');
+    Route::put('/appointments/{appointment}/reschedule',
+       [AppointmentController::class, 'reschedule'])->name('appointments.reschedule');
 
     Route::post('/payment/checkout', [PaymentController::class, 'checkout'])->name('payment.checkout');
     Route::get('/payment/success', [PaymentController::class, 'success'])->name('payment.success');
@@ -79,7 +84,7 @@ Route::middleware(['auth'])->group(function () {
      
     Route::get('/admin/revenue', [AdminController::class, 'revenue'])->name('admin.revenue');
 
-    Route::get('/admin/dashboard', [AdminCpntroller::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
     Route::get('/plans', [SubscriptionController::class, 'plans'])->name('plans');
 
@@ -88,10 +93,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/subscription/success', [SubscriptionController::class, 'success'])->name('subscription.success');
 
     Route::get('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subsription.cancel');
-
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    });
 
     Route::resource('appointments', AppointmentController::class);
 
@@ -123,7 +124,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/doctor/patient-records/{patient}', [MedicalRecordController::class, 'doctorView'])->name('doctor.records');
 
     // Download
-    Route::get('records/download/{id}', [MedicalRecordcontroller::class, 'download'])->name('records.download');
+    Route::get('records/download/{id}', [MedicalRecordController::class, 'download'])->name('records.download');
 
     Route::get('/symptom-checker', [SymptomCheckerController::class, 'index'])->name('symptom.index');
 

@@ -7,6 +7,7 @@ $classes = match($type) {
     'danger'  => 'badge-danger',
     'info'    => 'badge-info',
     'ai'      => 'badge-ai',
+    'brand'   => 'badge-brand',
     default   => 'badge-neutral',
 };
 @endphp

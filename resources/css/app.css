@@ -11,24 +11,39 @@
     body {
         @apply bg-surface-muted text-slate-800;
     }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        @apply bg-transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        @apply bg-slate-300 rounded-full;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        @apply bg-slate-400;
+    }
 }
 
 @layer components {
     /* Buttons */
     .btn {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98];
     }
 
     .btn-primary {
-        @apply btn bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-500 shadow-sm;
+        @apply btn bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-500 shadow-sm hover:shadow-md hover:shadow-brand-500/20;
     }
 
     .btn-secondary {
-        @apply btn bg-white text-slate-700 border border-surface-border hover:bg-slate-50 focus:ring-slate-300 shadow-sm;
+        @apply btn bg-white text-slate-700 border border-surface-border hover:bg-slate-50 hover:border-slate-300 focus:ring-slate-300 shadow-sm;
     }
 
     .btn-danger {
-        @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm;
+        @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm hover:shadow-md hover:shadow-red-500/20;
     }
 
     .btn-ghost {
@@ -39,9 +54,17 @@
         @apply px-3 py-1.5 text-xs rounded-md;
     }
 
+    .btn-lg {
+        @apply px-6 py-3 text-base rounded-xl;
+    }
+
     /* Cards */
     .card {
-        @apply bg-white rounded-2xl border border-surface-border shadow-card;
+        @apply bg-white rounded-2xl border border-surface-border shadow-card transition-shadow duration-200;
+    }
+
+    .card-hover {
+        @apply card hover:shadow-card-hover;
     }
 
     .card-body {
@@ -54,11 +77,15 @@
 
     /* Form inputs */
     .form-input {
-        @apply w-full rounded-lg border-surface-border bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:border-brand-500 focus:ring-brand-500 shadow-sm;
+        @apply w-full rounded-lg border-surface-border bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:border-brand-500 focus:ring-brand-500 shadow-sm transition-colors duration-150;
     }
 
     .form-label {
         @apply block text-sm font-medium text-slate-700 mb-1.5;
+    }
+
+    .form-group {
+        @apply space-y-1.5;
     }
 
     /* Badges */
@@ -90,6 +117,10 @@
         @apply badge bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-600/20;
     }
 
+    .badge-brand {
+        @apply badge bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-600/20;
+    }
+
     /* Sidebar nav */
     .nav-item {
         @apply flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 transition-all duration-150;
@@ -105,7 +136,7 @@
 
     /* Stat card */
     .stat-card {
-        @apply card p-6 flex flex-col gap-3 transition-shadow duration-200 hover:shadow-card-hover;
+        @apply card p-6 flex flex-col gap-3 transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5;
     }
 
     .stat-icon {
@@ -145,5 +176,48 @@
 
     .page-subtitle {
         @apply text-sm text-slate-500 mt-0.5;
+    }
+
+    /* Section title */
+    .section-title {
+        @apply text-base font-semibold text-slate-900;
+    }
+
+    /* Gradient text */
+    .gradient-text {
+        @apply bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent;
+    }
+
+    /* Glass effect */
+    .glass {
+        @apply bg-white/80 backdrop-blur-md border border-white/20;
+    }
+
+    /* Sidebar section label */
+    .sidebar-label {
+        @apply px-3 pt-4 pb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500;
+    }
+
+    /* Avatar */
+    .avatar {
+        @apply flex items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700;
+    }
+
+    /* Pricing card */
+    .pricing-card {
+        @apply card p-8 flex flex-col gap-6 transition-all duration-200 hover:shadow-card-hover hover:-translate-y-1;
+    }
+
+    .pricing-card-featured {
+        @apply card p-8 flex flex-col gap-6 transition-all duration-200 hover:shadow-card-hover hover:-translate-y-1 ring-2 ring-brand-500 relative;
+    }
+
+    /* Timeline item */
+    .timeline-item {
+        @apply flex gap-4 pb-6 last:pb-0;
+    }
+
+    .timeline-dot {
+        @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-full;
     }
 }

@@ -1,146 +1,166 @@
-<x-app-layout>
+<![CDATA[<x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-semibold text-gray-800">
-            Patient Dashboard
-        </h2>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <span class="page-title">Patient Dashboard</span>
+                <p class="page-subtitle">Welcome back, {{ auth()->user()->name ?? 'Patient' }}</p>
+            </div>
+            <a href="{{ route('booking.show', 1) }}" class="btn-primary">
+                <x-icon name="plus" class="w-4 h-4" />
+                Book Appointment
+            </a>
+        </div>
     </x-slot>
 
-    <div class="p-6 space-y-6">
+    <div class="space-y-6">
 
-        {{-- 🔔 Flash Messages --}}
+        {{-- Flash Messages --}}
         @if(session('success'))
-            <div class="bg-green-100 text-green-700 p-3 rounded">
-                {{ session('success') }}
-            </div>
+            <x-alert type="success">{{ session('success') }}</x-alert>
         @endif
 
-        {{-- 📊 Stats --}}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-            <div class="bg-white p-5 rounded shadow">
-                <p class="text-gray-500 text-sm">Total Appointments</p>
-                <h3 class="text-2xl font-bold">{{ $totalAppointments }}</h3>
-            </div>
-
-            <div class="bg-white p-5 rounded shadow">
-                <p class="text-gray-500 text-sm">Upcoming</p>
-                <h3 class="text-2xl font-bold text-blue-600">{{ $upcomingCount }}</h3>
-            </div>
-
-            <div class="bg-white p-5 rounded shadow">
-                <p class="text-gray-500 text-sm">Completed</p>
-                <h3 class="text-2xl font-bold text-green-600">
-                    {{ $totalAppointments - $upcomingCount }}
-                </h3>
-            </div>
-
+        {{-- Stats --}}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <x-stat-card label="Total Appointments" :value="$totalAppointments" icon="calendar" color="brand" />
+            <x-stat-card label="Upcoming" :value="$upcomingCount" icon="clock" color="sky" />
+            <x-stat-card label="Completed" :value="$totalAppointments - $upcomingCount" icon="check" color="emerald" />
         </div>
 
-        {{-- 📅 Upcoming --}}
-        <div class="bg-white p-6 rounded shadow">
-            <h3 class="text-lg font-semibold mb-4">Upcoming Appointments</h3>
-
-            @forelse($upcomingAppointments as $appt)
-                <div class="flex justify-between items-center border-b py-4">
-
-                    <div>
-                        <p class="font-semibold">
-                            Dr. {{ $appt->doctor->name ?? 'Doctor' }}
-                        </p>
-                        <p class="text-sm text-gray-500">
-                            {{ $appt->date }} at {{ $appt->time }}
-                        </p>
-                    </div>
-
-                    <div class="flex flex-col items-end gap-2">
-
-                        <span class="text-xs px-2 py-1 rounded bg-gray-100">
-                            {{ ucfirst($appt->status) }}
-                        </span>
-
-                        {{-- 💳 Payment --}}
-                        @if($appt->is_paid)
-                            <span class="text-green-600 text-sm font-semibold">Paid</span>
-                        @else
-                            <a href="{{ route('checkout', $appt->id) }}"
-                               class="text-blue-600 text-sm underline">
-                                Pay
-                            </a>
-                        @endif
-
-                    </div>
+        {{-- Upcoming Appointments --}}
+        <div class="card overflow-hidden">
+            <div class="card-header">
+                <div class="flex items-center gap-2">
+                    <x-icon name="calendar" class="w-5 h-5 text-brand-600" />
+                    <h3 class="section-title">Upcoming Appointments</h3>
                 </div>
-            @empty
-                <p>No upcoming appointments.</p>
-            @endforelse
-        </div>
-
-        {{-- 🕘 HISTORY + MEDICAL --}}
-        <div class="bg-white p-6 rounded shadow">
-            <h3 class="text-lg font-semibold mb-4">Medical History</h3>
-
-            @forelse($pastAppointments as $appt)
-                <div class="border-b py-4 space-y-2">
-
-                    <p class="font-semibold">
-                        Dr. {{ $appt->doctor->name ?? 'Doctor' }}
-                    </p>
-
-                    <p class="text-sm text-gray-500">
-                        {{ $appt->date }} at {{ $appt->time }}
-                    </p>
-
-                    {{-- 📝 Diagnosis --}}
-                    @if($appt->is_shared_with_patient && $appt->diagnosis)
-                        <div class="bg-gray-50 p-3 rounded">
-                            <p class="text-sm"><strong>Diagnosis:</strong> {{ $appt->diagnosis }}</p>
-                        </div>
-                    @endif
-
-                    {{-- 💊 Prescription --}}
-                    @if($appt->is_shared_with_patient && $appt->prescription)
-                        <div class="bg-gray-50 p-3 rounded">
-                            <p class="text-sm"><strong>Prescription:</strong> {{ $appt->prescription }}</p>
+                <span class="badge-brand">{{ $upcomingCount }} scheduled</span>
+            </div>
+            <div class="divide-y divide-surface-border">
+                @forelse($upcomingAppointments as $appt)
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 hover:bg-slate-50/50 transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">
+                                {{ collect(explode(' ', $appt->doctor->name ?? 'D'))->map(fn($w) => strtoupper(substr($w,0,1)))->take(2)->join('') }}
+                            </div>
+                            <div>
+                                <p class="font-semibold text-slate-900">Dr. {{ $appt->doctor->name ?? 'Doctor' }}</p>
+                                <p class="text-sm text-slate-500 flex items-center gap-1.5">
+                                    <x-icon name="clock" class="w-3.5 h-3.5" />
+                                    {{ $appt->date }} at {{ $appt->time }}
+                                </p>
+                            </div>
                         </div>
 
-                        <a href="{{ route('prescription.download', $appt->id) }}"
-                           class="text-blue-600 text-sm underline">
-                            📄 Download Prescription
-                        </a>
-                    @endif
+                        <div class="flex items-center gap-3">
+                            <x-badge :type="match($appt->status, 'approved' => 'success', 'pending' => 'warning', 'cancelled' => 'danger', default => 'neutral')">
+                                {{ ucfirst($appt->status) }}
+                            </x-badge>
 
-                </div>
-            @empty
-                <p>No history yet.</p>
-            @endforelse
+                            @if($appt->is_paid)
+                                <span class="badge-success">
+                                    <x-icon name="check" class="w-3 h-3" />
+                                    Paid
+                                </span>
+                            @else
+                                <a href="{{ route('checkout', $appt->id) }}" class="btn-primary btn-sm">
+                                    <x-icon name="credit-card" class="w-3.5 h-3.5" />
+                                    Pay Now
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <x-empty-state title="No upcoming appointments" description="Book your next appointment to get started." icon="calendar">
+                        <a href="{{ route('booking.show', 1) }}" class="btn-primary btn-sm">Book Appointment</a>
+                    </x-empty-state>
+                @endforelse
+            </div>
         </div>
 
-        {{-- 🤖 AI FOLLOW-UPS --}}
-        <div class="bg-white p-6 rounded shadow">
-            <h3 class="text-lg font-semibold text-purple-700 mb-4">
-                🤖 AI Follow-Ups
-            </h3>
+        {{-- Medical History + AI Follow-ups --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-            <form method="POST" action="{{ route('patient.followup.trigger') }}">
-                @csrf 
-                <button class="btn btn-success mb-3">
-                    🤖 Generate Follow-Up 
-                </button>
-
-            @forelse($followUps as $follow)
-                <div class="border-b py-3">
-                    <p class="text-sm text-gray-700">
-                        {{ $follow->message }}
-                    </p>
-
-                    <p class="text-xs text-gray-400">
-                        {{ $follow->created_at->diffForHumans() }}
-                    </p>
+            {{-- Medical History --}}
+            <div class="card overflow-hidden">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <x-icon name="document" class="w-5 h-5 text-sky-600" />
+                        <h3 class="section-title">Medical History</h3>
+                    </div>
                 </div>
-            @empty
-                <p class="text-gray-500">No follow-ups yet.</p>
-            @endforelse
+                <div class="divide-y divide-surface-border">
+                    @forelse($pastAppointments as $appt)
+                        <div class="p-5 hover:bg-slate-50/50 transition-colors">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="font-semibold text-slate-900">Dr. {{ $appt->doctor->name ?? 'Doctor' }}</p>
+                                <span class="text-xs text-slate-400">{{ $appt->date }}</span>
+                            </div>
+
+                            @if($appt->is_shared_with_patient && $appt->diagnosis)
+                                <div class="rounded-lg bg-slate-50 p-3 mb-2">
+                                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Diagnosis</p>
+                                    <p class="text-sm text-slate-700">{{ $appt->diagnosis }}</p>
+                                </div>
+                            @endif
+
+                            @if($appt->is_shared_with_patient && $appt->prescription)
+                                <div class="rounded-lg bg-slate-50 p-3 mb-3">
+                                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Prescription</p>
+                                    <p class="text-sm text-slate-700">{{ $appt->prescription }}</p>
+                                </div>
+                                <a href="{{ route('prescription.download', $appt->id) }}" class="btn-secondary btn-sm">
+                                    <x-icon name="document" class="w-3.5 h-3.5" />
+                                    Download Prescription
+                                </a>
+                            @endif
+                        </div>
+                    @empty
+                        <x-empty-state title="No history yet" description="Your medical history will appear here after appointments." icon="document" />
+                    @endforelse
+                </div>
+            </div>
+
+            {{-- AI Follow-Ups --}}
+            <div class="card overflow-hidden">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100">
+                            <x-icon name="sparkles" class="w-4 h-4 text-violet-600" />
+                        </div>
+                        <h3 class="section-title">AI Follow-Ups</h3>
+                    </div>
+                    <span class="badge-ai">AI Powered</span>
+                </div>
+                <div class="p-5 border-b border-surface-border">
+                    <form method="POST" action="{{ route('patient.followup.trigger') }}">
+                        @csrf
+                        <button class="btn-primary w-full bg-violet-600 hover:bg-violet-700 focus:ring-violet-500 hover:shadow-violet-500/20">
+                            <x-icon name="sparkles" class="w-4 h-4" />
+                            Generate AI Follow-Up
+                        </button>
+                    </form>
+                </div>
+                <div class="divide-y divide-surface-border">
+                    @forelse($followUps as $follow)
+                        <div class="p-5 hover:bg-slate-50/50 transition-colors">
+                            <div class="flex gap-3">
+                                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100">
+                                    <x-icon name="sparkles" class="w-4 h-4 text-violet-600" />
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm text-slate-700">{{ $follow->message }}</p>
+                                    <p class="text-xs text-slate-400 mt-1.5">{{ $follow->created_at->diffForHumans() }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <x-empty-state title="No follow-ups yet" description="Generate AI-powered follow-ups for your care." icon="sparkles" />
+                    @endforelse
+                </div>
+            </div>
+
         </div>
 
     </div>
 </x-app-layout>
+]]>

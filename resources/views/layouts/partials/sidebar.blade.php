@@ -5,7 +5,7 @@
 
 {{-- Logo --}}
 <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 shadow-lg shadow-brand-500/30">
+    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-brand shadow-lg shadow-brand-500/30">
         <x-icon name="heart" class="w-5 h-5 text-white" />
     </div>
     <div>
@@ -15,7 +15,7 @@
 </div>
 
 {{-- Navigation --}}
-<nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+<nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1 sidebar-scroll">
 
     {{-- Dashboard (role-specific) --}}
     @if($role === 'doctor')
@@ -30,14 +30,14 @@
 
     {{-- Patients (admin / receptionist) --}}
     @if(in_array($role, ['admin', 'receptionist']))
-        <p class="px-3 pt-4 pb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Clinic</p>
+        <p class="sidebar-label">Clinic</p>
         <x-sidebar-link :href="route('patients.index')" :active="request()->routeIs('patients.*')" icon="users">Patients</x-sidebar-link>
         <x-sidebar-link :href="route('appointments.create')" :active="request()->routeIs('appointments.*')" icon="calendar">Appointments</x-sidebar-link>
     @endif
 
     {{-- Doctor tools --}}
     @if($role === 'doctor')
-        <p class="px-3 pt-4 pb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Practice</p>
+        <p class="sidebar-label">Practice</p>
         <x-sidebar-link :href="route('appointments.create')" :active="request()->routeIs('appointments.*')" icon="calendar">Appointments</x-sidebar-link>
         <x-sidebar-link :href="route('doctor.calendar')" :active="request()->routeIs('doctor.calendar')" icon="calendar">Calendar</x-sidebar-link>
         <x-sidebar-link :href="route('availability.index')" :active="request()->routeIs('availability.*')" icon="clock">Availability</x-sidebar-link>
@@ -46,21 +46,21 @@
 
     {{-- Patient tools --}}
     @if($role === 'patient')
-        <p class="px-3 pt-4 pb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Care</p>
+        <p class="sidebar-label">Care</p>
         <x-sidebar-link :href="route('booking.show', 1)" :active="request()->routeIs('booking.*')" icon="calendar">Book Appointment</x-sidebar-link>
         <x-sidebar-link :href="route('patient.history')" :active="request()->routeIs('patient.history')" icon="document">Medical History</x-sidebar-link>
         <x-sidebar-link :href="route('records.index')" :active="request()->routeIs('records.*')" icon="document">My Records</x-sidebar-link>
     @endif
 
     {{-- AI & Health tools (all authenticated) --}}
-    <p class="px-3 pt-4 pb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">AI Health</p>
+    <p class="sidebar-label">AI Health</p>
     <x-sidebar-link :href="route('symptom.index')" :active="request()->routeIs('symptom.*')" icon="heart">Symptom Checker</x-sidebar-link>
     <x-sidebar-link :href="route('ai.chat')" :active="request()->routeIs('ai.*')" icon="sparkles">AI Assistant</x-sidebar-link>
     <x-sidebar-link :href="route('followups.index')" :active="request()->routeIs('followups.*')" icon="bell">Follow-ups</x-sidebar-link>
 
     {{-- Admin --}}
     @if($role === 'admin')
-        <p class="px-3 pt-4 pb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Admin</p>
+        <p class="sidebar-label">Admin</p>
         <x-sidebar-link :href="route('admin.revenue')" :active="request()->routeIs('admin.revenue')" icon="credit-card">Revenue</x-sidebar-link>
         <x-sidebar-link :href="route('plans')" :active="request()->routeIs('plans')" icon="building">Plans</x-sidebar-link>
     @endif
@@ -70,7 +70,7 @@
 {{-- User footer --}}
 <div class="border-t border-white/10 p-4">
     <div class="flex items-center gap-3 mb-3">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-xs font-bold text-white shadow-sm">
             {{ $initials }}
         </div>
         <div class="min-w-0 flex-1">
@@ -85,7 +85,7 @@
         </a>
         <form method="POST" action="{{ route('logout') }}" class="flex-1">
             @csrf
-            <button type="submit" class="w-full nav-item justify-center text-xs py-2 hover:text-red-400">
+            <button type="submit" class="w-full nav-item justify-center text-xs py-2 transition-colors hover:text-red-400">
                 <x-icon name="logout" class="w-4 h-4" />
                 Logout
             </button>
