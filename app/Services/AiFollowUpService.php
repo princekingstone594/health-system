@@ -39,4 +39,30 @@ class AiFollowUpService
             'advice' => $data['advice'] ?? null,
         ];
     }
+
+    protected $generator;
+
+    public function __construct(AiMessageGenerator $generator)
+    {
+        $this->generator = $generator;
+    }
+
+    /**
+     * ✅ Create automatic follow-up
+     */
+    public function createAutoFollowUp(User $patient, array $context = [])
+    {
+        // 🔥 Call AI Generator
+        $message = $this->generator->generateFollowUpMessage(
+            $patient->name,
+            $context
+        );
+
+        // 💾 Save to DB
+        return FollowUp::create([
+            'patient_id' => $patient->id,
+            'message' => $message,
+            'status' => 'pending',
+        ]);
+    }
 }

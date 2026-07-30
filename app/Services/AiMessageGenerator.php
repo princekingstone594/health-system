@@ -32,4 +32,29 @@ class AIMessageGenerator
 
         return $response->choices[0]->message->content;
     }
+
+    public function analyzePatientResponse(string $respenseText): string
+    {
+        $prompt = "
+        A patient respomded to a medical follow-up:
+        
+        \"{$responseText}\"
+
+        Classify the response into ONE of these categories:
+            - reviewed (patient is okay)
+            - needs_attention (patient may be getting worse)
+            
+        Only return the category word.
+        ";
+
+        $response = OpenAI::chat()->create([
+            'model' => 'gpt-40-mini',
+            'messages' => [
+                ['role' => 'system', 'content' => 'You are a medical classifier.'],
+                ['role' => 'user', 'content' => $prompt],
+            ],
+        ]);
+
+        return trim(strtolower($response['choices'][0]['message']['content']));
+    } 
 }

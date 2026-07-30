@@ -239,6 +239,7 @@ Route::middleware(['auth'])->group(function () {
     
     Route::middleware(['auth', 'patient'])->group(function () {
         Route::get('/patient/dashboard', [PatientDashboardController::class, 'index'])->name('patient.dashboard');
+        Route::post('/patient/followup/trigger', [PatientDashboardController::class, 'triggerFollowUp'])->name('patient.followup.trigger');
     });
 });
 

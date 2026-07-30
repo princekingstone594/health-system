@@ -121,6 +121,12 @@
                 🤖 AI Follow-Ups
             </h3>
 
+            <form method="POST" action="{{ route('patient.followup.trigger') }}">
+                @csrf 
+                <button class="btn btn-success mb-3">
+                    🤖 Generate Follow-Up 
+                </button>
+
             @forelse($followUps as $follow)
                 <div class="border-b py-3">
                     <p class="text-sm text-gray-700">
