@@ -34,6 +34,7 @@
                 class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-200">
                 <option value="patient">Patient</option>
                 <option value="doctor">Doctor</option>
+                <option value="receptionist">Receptionist</option>
             </select>
 
             <x-input-error :messages="$errors->get('role')" class="mt-2" />

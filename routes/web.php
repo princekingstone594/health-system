@@ -24,6 +24,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\PatientHistoryController;
 use App\Http\Controllers\FollowUpController;
+use App\Http\Controllers\RecptionistDashboardController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -128,6 +129,11 @@ Route::middleware(['auth'])->group(function () {
          ->name('doctor.dashboard')
          ->middleware('role:doctor');
     Route::get('/doctor/patient-records/{patient}', [MedicalRecordController::class, 'doctorView'])->name('doctor.records');
+
+    // Receptionist
+    Route::get('/receptionist/dashboard', [ReceptionistDashboardController::class, 'index'])
+         -> name('receptionist.dashboard')
+         ->middleware('role:receptionist');
 
     // Download
     Route::get('records/download/{id}', [MedicalRecordController::class, 'download'])->name('records.download');
