@@ -85,6 +85,11 @@ class User extends Authenticatable
 
     public function reviewsGiven()
     {
-        return $this->hasMany(Review::class, 'patient_id');
+        return $this->hasMany(Review::class, 'user_id');
+    }
+
+    public function aiMemories()
+    {
+       return $this->hasMany(AiChatMemory::class);
     }
 }

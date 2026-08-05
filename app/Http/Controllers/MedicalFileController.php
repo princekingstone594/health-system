@@ -21,7 +21,7 @@ class MedicalFileController extends Controller
 
         MedicalFile::create([
             'appointment_id' => $request->appointment_id,
-            'patient_id' => auth()->id(),
+            'user_id' => auth()->id(),
             'file_path' => $path,
             'original_name' => $request->file('file')->getClientOriginalName(),
         ]);
@@ -46,7 +46,7 @@ class MedicalFileController extends Controller
     {
         $file = MedicalFile::findOrFail($id);
 
-        if ($file->patient_id !== auth()->id()) {
+        if ($file->user_id !== auth()->id()) {
             abort(403);
         }
 

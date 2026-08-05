@@ -14,7 +14,7 @@ class DoctorSummaryController extends Controller
         $patientId = auth()->id();
 
         // 🧠 Get last conversations
-        $messages = AiChat::where('patient_id', $patientId)
+        $messages = AiChat::where('user_id', $patientId)
             ->latest()
             ->take(15)
             ->get()
@@ -23,7 +23,7 @@ class DoctorSummaryController extends Controller
             ->implode("\n");
 
         // 🧠 Get stored memory
-        $memories = AiChatMemory::where('patient_id', $patientId)->get();
+        $memories = AiChatMemory::where('user_id', $patientId)->get();
 
         $memoryText = $memories->map(function ($m) {
             return "{$m->key}: {$m->value}";

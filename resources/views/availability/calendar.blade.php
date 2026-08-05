@@ -84,7 +84,7 @@
 
                 <p id="displayDate" class="text-sm text-gray-500"></p>
 
-                <select name="patient_id" class="w-full border rounded-lg px-3 py-2">
+                <select name="user_id" class="w-full border rounded-lg px-3 py-2">
                     @foreach(\App\Models\Patient::all() as $patient)
                         <option value="{{ $patient->id }}">{{ $patient->name }}</option>
                     @endforeach

@@ -23,7 +23,7 @@ class FollowUpController extends Controller
     // 📬 Show all follow-ups for patient
     public function index()
     {
-        $followUps = FollowUp::where('patient_id', auth()->id())
+        $followUps = FollowUp::where('user_id', auth()->id())
             ->latest()
             ->get();
 
@@ -36,7 +36,7 @@ class FollowUpController extends Controller
         $followUp = FollowUp::findOrFail($id);
 
         // 🔐 Security check
-        if ($followUp->patient_id !== auth()->id()) {
+        if ($followUp->user_id !== auth()->id()) {
             abort(403);
         }
 

@@ -25,10 +25,10 @@
             <!-- Patient -->
             <div class="mb-4">
                 <label class="block mb-1">Patient</label>
-                <select name="patient_id" class="w-full border rounded px-3 py-2">
+                <select name="user_id" class="w-full border rounded px-3 py-2">
                     @foreach($patients as $patient)
                         <option value="{{ $patient->id }}"
-                            {{ $appointment->patient_id == $patient->id ? 'selected' : '' }}>
+                            {{ $appointment->user_id == $patient->id ? 'selected' : '' }}>
                             {{ $patient->name }}
                         </option>
                     @endforeach

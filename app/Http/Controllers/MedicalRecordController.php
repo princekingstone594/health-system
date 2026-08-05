@@ -32,7 +32,7 @@ class MedicalRecordController extends Controller
         $path = $file->store('medical_records', 'public');
 
         MedicalRecord::create([
-            'patient_id' => Auth::id(),
+            'user_id' => Auth::id(),
             'doctor_id' => Appointment::find($request->appointment_id)->doctor_id,
             'appointment_id' => $request->appointment_id,
             'title' => $request->title,
@@ -46,7 +46,7 @@ class MedicalRecordController extends Controller
     // 👀 Patient view own records
     public function index()
     {
-        $records = MedicalRecord::where('patient_id', Auth::id())
+        $records = MedicalRecord::where('user_id', Auth::id())
             ->latest()
             ->get();
 
@@ -56,7 +56,7 @@ class MedicalRecordController extends Controller
     // 👨‍⚕️ Doctor view patient records
     public function doctorView($patientId)
     {
-        $records = MedicalRecord::where('patient_id', $patientId)
+        $records = MedicalRecord::where('user_id', $patientId)
             ->where('doctor_id', Auth::id())
             ->latest()
             ->get();
@@ -71,7 +71,7 @@ class MedicalRecordController extends Controller
 
         // Security check
         if (
-            $record->patient_id !== Auth::id() &&
+            $record->user_id !== Auth::id() &&
             $record->doctor_id !== Auth::id()
         ) {
             abort(403);

@@ -16,7 +16,7 @@ class AppointmentController extends Controller
 {
     public function index()
     {
-        $appointments = Appointment::where('patient_id', auth()->id())
+        $appointments = Appointment::where('user_id', auth()->id())
             ->with('doctor')
             ->latest()
             ->get();
@@ -163,7 +163,7 @@ class AppointmentController extends Controller
             // ✅ CREATE FIRST APPOINTMENT
             // ===============================
             $first = Appointment::create([
-                'patient_id' => auth()->id(),
+                'user_id' => auth()->id(),
                 'doctor_id' => $doctorId,
                 'appointment_date' => $date,
                 'appointment_time' => $time,
@@ -201,7 +201,7 @@ class AppointmentController extends Controller
                     if ($exists) continue;
 
                     Appointment::create([
-                        'patient_id' => auth()->id(),
+                        'user_id' => auth()->id(),
                         'doctor_id' => $doctorId,
                         'appointment_date' => $nextDate->format('Y-m-d'),
                         'appointment_time' => $time,
@@ -274,7 +274,7 @@ class AppointmentController extends Controller
     {
         $appointment = Appointment::findOrFail($id);
 
-        if ($appointment->patient_id !== auth()->id()) {
+        if ($appointment->user_id !== auth()->id()) {
             abort(403);
         }
 
@@ -289,7 +289,7 @@ class AppointmentController extends Controller
     {
         $appointment = Appointment::findOrFail($id);
 
-        if ($appointment->patient_id !== auth()->id()) {
+        if ($appointment->user_id !== auth()->id()) {
             abort(403);
         }
 
@@ -300,7 +300,7 @@ class AppointmentController extends Controller
     {
         $appointment = Appointment::findOrFail($id);
 
-        if ($appointment->patient_id !== auth()->id()) {
+        if ($appointment->user_id !== auth()->id()) {
             abort(403);
         }
 

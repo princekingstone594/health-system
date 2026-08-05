@@ -9,7 +9,7 @@ use App\Models\Doctor;
 class Appointment extends Model
 {
     protected $fillable = [
-        'patient_id',
+        'user_id',
         'doctor_id',
         'appointment_date',
         'appointment_time',
@@ -27,7 +27,7 @@ class Appointment extends Model
 
     public function patient()
     {
-        return $this->belongsTo(User::class, 'patient_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function doctor()

@@ -39,7 +39,7 @@ class DatabaseSeeder extends Seeder
 
         // Appointment
         Appointment::create([
-            'patient_id' => 1,
+            'user_id' => 1,
             'date' => now()
         ]);
     }

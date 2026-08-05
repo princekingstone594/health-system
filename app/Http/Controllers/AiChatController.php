@@ -12,7 +12,7 @@ class AiChatController extends Controller
 {
     public function index()
     {
-        $messages = AiChat::where('patient_id', auth()->id())->get();
+        $messages = AiChat::where('user_id', auth()->id())->get();
         return view('ai.chat', compact('messages'));
     }
 
@@ -36,14 +36,14 @@ class AiChatController extends Controller
 
         // 💾 Save user message
         AiChat::create([
-            'patient_id' => $patientId,
+            'user_id' => $patientId,
             'message' => $request->message,
             'role' => 'user',
             'personality' => $personality
         ]);
 
         // 🧠 Conversation memory (last 10 messages)
-        $history = AiChat::where('patient_id', $patientId)
+        $history = AiChat::where('user_id', $patientId)
             ->latest()
             ->take(10)
             ->get()
@@ -56,7 +56,7 @@ class AiChatController extends Controller
             ->toArray();
 
         // 🧠 Load stored patient memory
-        $memories = AiChatMemory::where('patient_id', $patientId)->get();
+        $memories = AiChatMemory::where('user_id', $patientId)->get();
 
         $memoryText = $memories->map(function ($m) {
             return "{$m->key}: {$m->value}";
@@ -105,7 +105,7 @@ class AiChatController extends Controller
 
         // 💾 Save AI reply
         AiChat::create([
-            'patient_id' => $patientId,
+            'user_id' => $patientId,
             'message' => $reply,
             'role' => 'assistant',
             'personality' => $personality
@@ -159,7 +159,7 @@ class AiChatController extends Controller
 
                 AiChatMemory::updateOrCreate(
                     [
-                        'patient_id' => $patientId,
+                        'user_id' => $patientId,
                         'key' => $key
                     ],
                     [

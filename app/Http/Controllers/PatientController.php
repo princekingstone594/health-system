@@ -16,7 +16,7 @@ class PatientController extends Controller
     {
         $patientId = auth()->id();
 
-        $appointments = Appointment::where('patient_id', $patientId)->get();
+        $appointments = Appointment::where('user_id', $patientId)->get();
 
         $totalAppointments = $appointments->count();
 
@@ -31,7 +31,7 @@ class PatientController extends Controller
             ->sortByDesc('date');
 
         // 🤖 AI FOLLOW-UPS
-        $followUps = FollowUp::where('patient_id', $patientId)
+        $followUps = FollowUp::where('user_id', $patientId)
             ->latest()
             ->get();
 

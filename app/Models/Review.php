@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Review extends Model
 {
     protected $fillable = [
-        'patient_id',
+        'user_id',
         'doctor_id',
         'appointment_id',
         'rating',
@@ -16,7 +16,7 @@ class Review extends Model
 
     public function patient()
     {
-        return $this->belongsTo(User::class, 'patient_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function doctor()

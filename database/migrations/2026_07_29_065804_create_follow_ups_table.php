@@ -16,7 +16,7 @@ return new class extends Migration
 
             // Correct foreign keys
             $table->foreignId('appointment_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
 
             // Follow-up content
             $table->text('message'); // AI question
@@ -35,7 +35,7 @@ return new class extends Migration
         Schema::table('follow_ups', function (Blueprint $table) {
             // Drop foreign keys first (safe rollback)
             $table->dropForeign(['appointment_id']);
-            $table->dropForeign(['patient_id']);
+            $table->dropForeign(['user_id']);
         });
 
         Schema::dropIfExists('follow_ups');

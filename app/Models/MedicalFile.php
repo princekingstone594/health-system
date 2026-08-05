@@ -8,7 +8,7 @@ class MedicalFile extends Model
 {
     protected $fillable = [
         'appointment_id',
-        'patient_id',
+        'user_id',
         'file_path',
         'original_name'
     ];

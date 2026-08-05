@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('ai_chats', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->text('message');
             $table->enum('role', ['user', 'assistant']);
             $table->timestamps();

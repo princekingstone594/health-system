@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('ai_chat_memories', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('patient_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
 
             // 🧠 Stored patient info
             $table->string('key'); // e.g/ allergies, chronic_condition, age

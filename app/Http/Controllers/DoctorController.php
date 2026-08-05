@@ -100,7 +100,7 @@ class DoctorController extends Controller
             ->get()
             ->map(function ($appt) {
                 return [
-                    'title' => 'Patient #' . $appt->patient_id,
+                    'title' => 'Patient #' . $appt->user_id,
                     'start' => $appt->date . 'T' . $appt->time,
                     'color' => $this->getStatusColor($appt->status),
                 ];
@@ -159,7 +159,7 @@ class DoctorController extends Controller
         // 🤖 Auto follow-up
         FollowUp::create([
             'appointment_id' => $appointment->id,
-            'patient_id' => $appointment->patient_id,
+            'user_id' => $appointment->user_id,
             'message' => $this->generateFollowUpMessage($appointment),
         ]);
 

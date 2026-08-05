@@ -60,7 +60,7 @@
             <!-- Patient -->
             <div>
                 <label class="text-sm font-medium">Patient</label>
-                <select id="patientSelect" name="patient_id" class="w-full border rounded-lg px-3 py-2">
+                <select id="patientSelect" name="user_id" class="w-full border rounded-lg px-3 py-2">
                     @foreach(\App\Models\Patient::all() as $p)
                         <option value="{{ $p->id }}">{{ $p->name }}</option>
                     @endforeach

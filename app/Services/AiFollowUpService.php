@@ -60,7 +60,7 @@ class AiFollowUpService
 
         // 💾 Save to DB
         return FollowUp::create([
-            'patient_id' => $patient->id,
+            'user_id' => $patient->id,
             'message' => $message,
             'status' => 'pending',
         ]);

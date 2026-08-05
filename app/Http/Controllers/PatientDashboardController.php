@@ -24,7 +24,7 @@ class PatientDashboardController extends Controller
         $user = Auth::user();
 
         // 🔍 Get patient profile
-        $patient = Patient::where('patient_id', $user->id)->first();
+        $patient = Patient::where('user_id', $user->id)->first();
 
         if (!$patient) {
             return redirect()->route('dashboard')
@@ -32,23 +32,23 @@ class PatientDashboardController extends Controller
         }
 
         // 📅 Upcoming appointments
-        $upcomingAppointments = Appointment::where('patient_id', $patient->id)
+        $upcomingAppointments = Appointment::where('user_id', $patient->id)
             ->where('appointment_date', '>=', now())
             ->with('doctor')
             ->orderBy('appointment_date', 'asc')
             ->get();
 
         // 🕘 Past appointments
-        $pastAppointments = Appointment::where('patient_id', $patient->id)
+        $pastAppointments = Appointment::where('user_id', $patient->id)
             ->where('appointment_date', '<', now())
             ->with('doctor')
             ->orderBy('appointment_date', 'desc')
             ->get();
 
         // 📊 Stats
-        $totalAppointments = Appointment::where('patient_id', $patient->id)->count();
+        $totalAppointments = Appointment::where('user_id', $patient->id)->count();
 
-        $upcomingCount = Appointment::where('patient_id', $patient->id)
+        $upcomingCount = Appointment::where('user_id', $patient->id)
             ->where('appointment_date', '>=', now())
             ->count();
 
@@ -56,7 +56,7 @@ class PatientDashboardController extends Controller
         $this->autoTriggerFollowUp($patient);
 
         // 📬 Get follow-ups
-        $followUps = FollowUp::where('patient_id', $patient->id)
+        $followUps = FollowUp::where('user_id', $patient->id)
             ->latest()
             ->get();
 
@@ -75,7 +75,7 @@ class PatientDashboardController extends Controller
     {
         $user = auth()->user();
 
-        $patient = Patient::where('patient_id', $user->id)->first();
+        $patient = Patient::where('user_id', $user->id)->first();
 
         if (!$patient) {
             return back()->with('error', 'Patient not found.');
@@ -92,7 +92,7 @@ class PatientDashboardController extends Controller
     private function autoTriggerFollowUp($patient)
     {
         // 🕒 Check last follow-up (avoid spam)
-        $lastFollowUp = FollowUp::where('patient_id', $patient->id)
+        $lastFollowUp = FollowUp::where('user_id', $patient->id)
             ->latest()
             ->first();
 
@@ -101,7 +101,7 @@ class PatientDashboardController extends Controller
         }
 
         // 📅 Check last appointment
-        $lastAppointment = Appointment::where('patient_id', $patient->id)
+        $lastAppointment = Appointment::where('user_id', $patient->id)
             ->latest('appointment_date')
             ->first();
 

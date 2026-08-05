@@ -19,7 +19,7 @@ class ReviewController extends Controller
         $appointment = Appointment::findOrFail($request->appointment_id);
 
         // 🔒 SECURITY CHECKS
-        if ($appointment->patient_id !== auth()->id()) {
+        if ($appointment->user_id !== auth()->id()) {
             abort(403);
         }
 
@@ -39,7 +39,7 @@ class ReviewController extends Controller
         }
 
         Review::create([
-            'patient_id' => auth()->id(),
+            'user_id' => auth()->id(),
             'doctor_id' => $appointment->doctor_id,
             'appointment_id' => $appointment->id,
             'rating' => $request->rating,

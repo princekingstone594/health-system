@@ -38,7 +38,7 @@ class SubscriptionController extends Controller
             ]],
 
             'metadata' => [
-                'patient_id' => $user->id,
+                'user_id' => $user->id,
                 'plan' => $plan,
             ],
 

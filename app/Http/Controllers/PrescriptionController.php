@@ -12,7 +12,7 @@ class PrescriptionController extends Controller
         $appointment = Appointment::with(['doctor', 'patient'])->findOrFail($id);
 
         // 🔐 Optional security
-        if (auth()->id() !== $appointment->doctor_id && auth()->id() !== $appointment->patient_id) {
+        if (auth()->id() !== $appointment->doctor_id && auth()->id() !== $appointment->user_id) {
             abort(403);
         }
 

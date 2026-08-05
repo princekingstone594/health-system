@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('appointments', function (Blueprint $table) {
-            $table->id();
+        Schema::table('ai_chat_memories', function (Blueprint $table) {
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('doctor_id')->nullable();
-            $table->dateTime('appointment_date');
-            $table->timestamps();
         });
     }
 
@@ -25,6 +21,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('appointments');
+        Schema::table('ai_chat_memories', function (Blueprint $table) {
+            $table->dropForign(['user_id']);
+            $table->dropColumn('user_id');
+        });
     }
 };
