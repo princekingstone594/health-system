@@ -92,4 +92,14 @@ class User extends Authenticatable
     {
        return $this->hasMany(AiChatMemory::class);
     }
+
+    public function followUpsSent()
+    {
+        return $this->hasMany(FollowUp::class, 'doctor_id');
+    }
+
+    public function FollowUpsReceived()
+    {
+        return $this->hasMany(FollowUp::class, 'patient_id');
+    }
 }

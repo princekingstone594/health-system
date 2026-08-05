@@ -27,7 +27,7 @@ class Appointment extends Model
 
     public function patient()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'patient_id');
     }
 
     public function doctor()
@@ -38,5 +38,10 @@ class Appointment extends Model
     public function medicalFiles()
     {
         return $this->hasMany(MedicalFile::class);
+    }
+
+    public function FollowUps()
+    {
+        return $this->hasMany(FollowUp::class);
     }
 }

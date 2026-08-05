@@ -1,4 +1,4 @@
-<![CDATA[<x-app-layout>
+<x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -66,7 +66,7 @@
                             </a>
 
                             {{-- AI Follow-Up --}}
-                            <form method="POST" action="{{ route('followup.generate', $appointment->id) }}">
+                            <form method="POST" action="{{ route('followup.generate', $appt->id) }}">
                                 @csrf
                                 <button class="btn-primary btn-sm bg-violet-600 hover:bg-violet-700 focus:ring-violet-500 hover:shadow-violet-500/20">
                                     <x-icon name="sparkles" class="w-3.5 h-3.5" />
