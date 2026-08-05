@@ -9,28 +9,57 @@
     <form method="POST" action="{{ route('login') }}" class="space-y-5">
         @csrf
 
+        <!-- Email -->
         <div>
             <x-input-label for="email" :value="__('Email address')" />
-            <x-text-input id="email" class="mt-1" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" placeholder="you@example.com" />
+            <x-text-input id="email" class="mt-1 w-full"
+                type="email" name="email"
+                :value="old('email')"
+                required autofocus autocomplete="username"
+                placeholder="you@example.com" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
+        <!-- Password -->
         <div>
             <div class="flex items-center justify-between">
                 <x-input-label for="password" :value="__('Password')" />
                 @if (Route::has('password.request'))
-                    <a class="text-xs text-brand-600 hover:text-brand-700 font-medium" href="{{ route('password.request') }}">
+                    <a class="text-xs text-brand-600 hover:text-brand-700 font-medium"
+                       href="{{ route('password.request') }}">
                         Forgot password?
                     </a>
                 @endif
             </div>
-            <x-text-input id="password" class="mt-1" type="password" name="password" required autocomplete="current-password" placeholder="••••••••" />
+
+            <div class="relative">
+                <x-text-input id="password"
+                    class="mt-1 w-full pr-10"
+                    type="password"
+                    name="password"
+                    required
+                    autocomplete="current-password"
+                    placeholder="••••••••" />
+
+                <!-- Toggle Button -->
+                <button type="button"
+                    onclick="togglePassword('password', this)"
+                    class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500">
+                    👁️
+                </button>
+            </div>
+
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
+        <!-- Remember -->
         <div class="flex items-center">
-            <input id="remember_me" type="checkbox" class="rounded border-surface-border text-brand-600 focus:ring-brand-500" name="remember">
-            <label for="remember_me" class="ml-2 text-sm text-slate-600">{{ __('Remember me') }}</label>
+            <input id="remember_me" type="checkbox"
+                class="rounded border-surface-border text-brand-600 focus:ring-brand-500"
+                name="remember">
+            <label for="remember_me" class="ml-2 text-sm text-slate-600">
+                {{ __('Remember me') }}
+            </label>
         </div>
 
         <x-primary-button class="w-full justify-center">
@@ -44,4 +73,18 @@
             Create account
         </a>
     </p>
+
+    <!-- Toggle Script -->
+    <script>
+        function togglePassword(fieldId, btn) {
+            const input = document.getElementById(fieldId);
+            if (input.type === "password") {
+                input.type = "text";
+                btn.innerText = "🙈";
+            } else {
+                input.type = "password";
+                btn.innerText = "👁️";
+            }
+        }
+    </script>
 </x-guest-layout>
