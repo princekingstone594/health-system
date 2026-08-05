@@ -53,7 +53,7 @@ class RegisteredUserController extends Controller
             return redirect()->route('doctor.dashboard');
         }
 
-        if (user->role === 'doctor') {
+        if ($user->role === 'receptionist') {
             return redirect()->route('receptionist.dashboard');
         }
 

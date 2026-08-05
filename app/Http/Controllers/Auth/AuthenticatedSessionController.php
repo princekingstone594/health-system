@@ -24,22 +24,29 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        // ✅ Authenticate user
         $request->authenticate();
 
+        // ✅ Regenerate session (security)
         $request->session()->regenerate();
 
         $user = Auth::user();
 
-        // ✅ ROLE-BASED REDIRECT
-        if ($user->role === 'doctor') {
-            return redirect()->route('doctor.dashboard');
+        // ✅ SAFETY CHECK (important)
+        if (!$user || !$user->role) {
+            Auth::logout();
+            return redirect('/login')->withErrors([
+                'email' => 'User role not assigned. Contact admin.',
+            ]);
         }
 
-        if ($user->role === 'receptionist') {
-            return redirect()->route('receptionist.dashboard');
-        }
-
-        return redirect()->route('patient.dashboard');
+        // ✅ CLEAN ROLE-BASED REDIRECT
+        return match ($user->role) {
+            'doctor' => redirect()->route('doctor.dashboard'),
+            'receptionist' => redirect()->route('receptionist.dashboard'),
+            'patient' => redirect()->route('patient.dashboard'),
+            default => redirect('/dashboard'),
+        };
     }
 
     /**
@@ -50,7 +57,6 @@ class AuthenticatedSessionController extends Controller
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
         return redirect('/');
