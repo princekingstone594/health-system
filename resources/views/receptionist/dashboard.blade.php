@@ -3,6 +3,11 @@
         <h1 class="text-2xl font-bold mb-4">Receptionist Dashboard</h1>
 
         <div class="grid grid-cols-3 gap-4 mb-6">
+            <h3>Recent Patients</h3>
+            @foreach($patients as $patient)
+                <p>{{ $patient->name }}</p>
+            @endforeach
+            
             <div class="bg-white p-4 shadow rounded">
                 <p class="text-sm text-gray-500">Total Appointments</p>
                 <p class="text-xl font-bold">{{ $totalAppointments }}</p>

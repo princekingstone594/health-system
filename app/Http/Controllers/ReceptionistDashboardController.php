@@ -9,6 +9,10 @@ class ReceptionistDashboardController extends Controller
 {
     public function index()
     {
+        $this->authorizeRole('receptionist');
+
+        $patients = User::where('role', 'patient')->latest()->take(5)->get();
+        
         // All appointments
         $appointments = Appointment::with(['patient', 'doctor'])
             ->latest()

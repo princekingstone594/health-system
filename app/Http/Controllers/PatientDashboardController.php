@@ -21,6 +21,10 @@ class PatientDashboardController extends Controller
 
     public function index()
     {
+        $this->authorizeRole('patient');
+
+        $patientId = auth()->id();
+        
         $user = Auth::user();
 
         // 🔍 Get patient profile

@@ -11,6 +11,8 @@ class DoctorDashboardController extends Controller
 {
     public function index()
     {
+        $this->authorizeRole('doctor');
+        
         $doctorId = auth()->id();
 
         // 📊 TOTAL APPOINTMENTS (for this doctor)
