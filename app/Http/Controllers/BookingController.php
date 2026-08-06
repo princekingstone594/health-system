@@ -79,6 +79,7 @@ class BookingController extends Controller
 
         // FIX: create appointment first
         $appointment = Appointment::create([
+            'user_id' => auth()->id(),
             'doctor_id' => $request->doctor_id,
             'clinic_id' => $request->clinic_id,
             'date' => $request->date,

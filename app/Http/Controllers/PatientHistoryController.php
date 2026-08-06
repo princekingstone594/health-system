@@ -14,8 +14,8 @@ class PatientHistoryController extends Controller
     {
         $appointments = Appointment::where('user_id', auth()->id())
             ->with(['doctor', 'medicalFiles'])
-            ->orderBy('appointment_date', 'desc')
-            ->orderBy('appointment_time', 'desc')
+            ->orderBy('date', 'desc')
+            ->orderBy('time', 'desc')
             ->get();
 
         return view('patient.history', compact('appointments'));
