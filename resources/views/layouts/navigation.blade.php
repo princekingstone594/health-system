@@ -1,146 +1,126 @@
-<nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+<nav x-data="{ open: false }" class="bg-white/80 backdrop-blur border-b border-gray-200 shadow-sm sticky top-0 z-50">
     
-    <!-- Primary Navigation -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="flex justify-between h-16 items-center">
 
             <!-- LEFT -->
-            <div class="flex">
+            <div class="flex items-center gap-6">
                 
                 <!-- Logo -->
-                <div class="shrink-0 flex items-center">
-                    <a href="
-                        @auth
-                            @if(auth()->user()->role === 'doctor')
-                                {{ route('doctor.dashboard') }}
-                            @elseif(auth()->user()->role === 'patient')
-                                {{ route('patient.dashboard') }}
-                            @elseif(auth()->user()->role === 'receptionist')
-                                {{ route('receptionist.dashboard') }}
-                            @else
-                                {{ route('dashboard') }}
-                            @endif
-                        @else
-                            {{ route('dashboard') }}
-                        @endauth
-                    ">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800 dark:text-gray-200" />
-                    </a>
-                </div>
+                <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
+                    <x-application-logo class="h-8 w-auto text-indigo-600" />
+                    <span class="font-semibold text-gray-800 text-lg">MediSys</span>
+                </a>
 
                 <!-- Desktop Nav -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                <div class="hidden sm:flex items-center gap-2">
 
-                    @auth
+                    <!-- Dashboard -->
+                    <a href="{{ route('dashboard') }}"
+                       class="px-4 py-2 rounded-lg text-sm font-medium transition
+                       {{ request()->routeIs('dashboard') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100' }}">
+                        Dashboard
+                    </a>
 
-                        <!-- ROLE DASHBOARD -->
-                        @if(auth()->user()->role === 'doctor')
-                            <x-nav-link :href="route('doctor.dashboard')" :active="request()->routeIs('doctor.dashboard')">
-                                Doctor Dashboard
-                            </x-nav-link>
-                        @elseif(auth()->user()->role === 'patient')
-                            <x-nav-link :href="route('patient.dashboard')" :active="request()->routeIs('patient.dashboard')">
-                                My Dashboard
-                            </x-nav-link>
-                        @elseif(auth()->user()->role === 'receptionist')
-                            <x-nav-link :href="route('receptionist.dashboard')" :active="request()->routeIs('receptionist.dashboard')">
-                                Reception
-                            </x-nav-link>
-                        @endif
+                    <!-- Patients -->
+                    @if(in_array(auth()->user()->role, ['admin', 'receptionist']))
+                        <a href="{{ route('patients.index') }}"
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition
+                           {{ request()->routeIs('patients.*') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100' }}">
+                            Patients
+                        </a>
+                    @endif
 
-                        <!-- PATIENTS (Receptionist) -->
-                        @if(in_array(auth()->user()->role, ['admin', 'receptionist']))
-                            <x-nav-link :href="route('patients.index')" :active="request()->routeIs('patients.*')">
-                                Patients
-                            </x-nav-link>
-                        @endif
+                    <!-- Appointments -->
+                    @if(in_array(auth()->user()->role, ['admin', 'doctor', 'receptionist']))
+                        <a href="{{ route('appointments.create') }}"
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition
+                           {{ request()->routeIs('appointments.*') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100' }}">
+                            Appointments
+                        </a>
+                    @endif
 
-                        <!-- APPOINTMENTS -->
-                        @if(in_array(auth()->user()->role, ['doctor', 'receptionist']))
-                            <x-nav-link :href="route('appointments.index')" :active="request()->routeIs('appointments.*')">
-                                Appointments
-                            </x-nav-link>
-                        @endif
+                    <!-- Doctor -->
+                    @if(auth()->user()->role === 'doctor')
+                        <a href="{{ route('availability.index') }}"
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition
+                           {{ request()->routeIs('availability.*') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100' }}">
+                            Availability
+                        </a>
 
-                        <!-- PATIENT APPOINTMENTS -->
-                        @if(auth()->user()->role === 'patient')
-                            <x-nav-link :href="route('appointments.index')" :active="request()->routeIs('appointments.*')">
-                                My Appointments
-                            </x-nav-link>
-                        @endif
+                        <a href="{{ route('availability.calendar') }}"
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition
+                           {{ request()->routeIs('availability.calendar') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100' }}">
+                            Calendar
+                        </a>
+                    @endif
 
-                        <!-- DOCTOR ONLY -->
-                        @if(auth()->user()->role === 'doctor')
-                            <x-nav-link :href="route('availability.index')" :active="request()->routeIs('availability.*')">
-                                Availability
-                            </x-nav-link>
-
-                            <x-nav-link :href="route('availability.calendar')" :active="request()->routeIs('availability.calendar')">
-                                Calendar
-                            </x-nav-link>
-                        @endif
-
-                        <!-- PATIENT ONLY -->
-                        @if(auth()->user()->role === 'patient')
-                            <x-nav-link :href="route('patient.history')" :active="request()->routeIs('patient.history')">
-                                My History
-                            </x-nav-link>
-
-                            <x-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
-                                AI Chat
-                            </x-nav-link>
-                        @endif
-
-                    @endauth
+                    <!-- Patient -->
+                    @if(auth()->user()->role === 'patient')
+                        <a href="{{ route('patient.history') }}"
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition
+                           {{ request()->routeIs('patient.history') ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100' }}">
+                            My History
+                        </a>
+                    @endif
 
                 </div>
             </div>
 
             <!-- RIGHT -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                @auth
-                <x-dropdown align="right" width="48">
+            <div class="hidden sm:flex items-center gap-4">
 
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 transition">
-                            
-                            <div>
-                                {{ Auth::user()->name }} 
-                                <span class="text-xs text-gray-400">({{ Auth::user()->role }})</span>
-                            </div>
+                <!-- Role Badge -->
+                <span class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-50 text-indigo-600 capitalize">
+                    {{ Auth::user()->role }}
+                </span>
 
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4z" clip-rule="evenodd"/>
-                                </svg>
-                            </div>
-                        </button>
-                    </x-slot>
+                <!-- User Dropdown -->
+                <div class="relative">
+                    <button @click="open = !open"
+                        class="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
 
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
+                        <div class="text-sm text-gray-700">
+                            {{ Auth::user()->name }}
+                        </div>
+
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+
+                    <!-- Dropdown -->
+                    <div x-show="open"
+                         @click.outside="open = false"
+                         x-transition
+                         class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border py-2">
+
+                        <a href="{{ route('profile.edit') }}"
+                           class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">
                             Profile
-                        </x-dropdown-link>
+                        </a>
 
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <x-dropdown-link :href="route('logout')"
-                                onclick="event.preventDefault(); this.closest('form').submit();">
-                                Log Out
-                            </x-dropdown-link>
+                            <button type="submit"
+                                class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50">
+                                Logout
+                            </button>
                         </form>
-                    </x-slot>
-
-                </x-dropdown>
-                @endauth
+                    </div>
+                </div>
             </div>
 
-            <!-- MOBILE TOGGLE -->
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-900 transition">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            <!-- MOBILE -->
+            <div class="sm:hidden flex items-center">
+                <button @click="open = ! open"
+                        class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition">
+                    <svg class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor">
+                        <path :class="{'hidden': open, 'block': !open}" stroke-linecap="round" stroke-width="2"
+                              d="M4 6h16M4 12h16M4 18h16"/>
+                        <path :class="{'block': open, 'hidden': !open}" stroke-linecap="round" stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
@@ -149,100 +129,35 @@
     </div>
 
     <!-- MOBILE MENU -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
+    <div x-show="open" x-transition class="sm:hidden bg-white border-t px-4 pb-4 space-y-2">
 
-        <div class="pt-2 pb-3 space-y-1">
+        <a href="{{ route('dashboard') }}" class="block py-2 text-gray-700">Dashboard</a>
 
-            @auth
+        @if(in_array(auth()->user()->role, ['admin', 'receptionist']))
+            <a href="{{ route('patients.index') }}" class="block py-2 text-gray-700">Patients</a>
+        @endif
 
-                <!-- DASHBOARD -->
-                @if(auth()->user()->role === 'doctor')
-                    <x-responsive-nav-link :href="route('doctor.dashboard')">
-                        Doctor Dashboard
-                    </x-responsive-nav-link>
-                @elseif(auth()->user()->role === 'patient')
-                    <x-responsive-nav-link :href="route('patient.dashboard')">
-                        My Dashboard
-                    </x-responsive-nav-link>
-                @elseif(auth()->user()->role === 'receptionist')
-                    <x-responsive-nav-link :href="route('receptionist.dashboard')">
-                        Reception
-                    </x-responsive-nav-link>
-                @endif
+        @if(in_array(auth()->user()->role, ['admin', 'doctor', 'receptionist']))
+            <a href="{{ route('appointments.create') }}" class="block py-2 text-gray-700">Appointments</a>
+        @endif
 
-                <!-- SHARED -->
-                @if(in_array(auth()->user()->role, ['doctor', 'receptionist']))
-                    <x-responsive-nav-link :href="route('appointments.index')">
-                        Appointments
-                    </x-responsive-nav-link>
-                @endif
+        @if(auth()->user()->role === 'doctor')
+            <a href="{{ route('availability.index') }}" class="block py-2 text-gray-700">Availability</a>
+            <a href="{{ route('availability.calendar') }}" class="block py-2 text-gray-700">Calendar</a>
+        @endif
 
-                @if(auth()->user()->role === 'patient')
-                    <x-responsive-nav-link :href="route('appointments.index')">
-                        My Appointments
-                    </x-responsive-nav-link>
+        @if(auth()->user()->role === 'patient')
+            <a href="{{ route('patient.history') }}" class="block py-2 text-gray-700">My History</a>
+        @endif
 
-                    <x-responsive-nav-link :href="route('patient.history')">
-                        My History
-                    </x-responsive-nav-link>
+        <hr>
 
-                    <x-responsive-nav-link :href="route('ai.chat')">
-                        AI Chat
-                    </x-responsive-nav-link>
-                @endif
+        <a href="{{ route('profile.edit') }}" class="block py-2 text-gray-600">Profile</a>
 
-                @if(auth()->user()->role === 'doctor')
-                    <x-responsive-nav-link :href="route('availability.index')">
-                        Availability
-                    </x-responsive-nav-link>
-
-                    <x-responsive-nav-link :href="route('availability.calendar')">
-                        Calendar
-                    </x-responsive-nav-link>
-                @endif
-
-                @if(auth()->user()->role === 'receptionist')
-                    <x-responsive-nav-link :href="route('patients.index')">
-                        Patients
-                    </x-responsive-nav-link>
-                @endif
-
-            @endauth
-
-        </div>
-
-        <!-- USER INFO -->
-        <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
-            
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800 dark:text-gray-200">
-                    {{ Auth::user()->name }}
-                </div>
-
-                <div class="text-sm text-gray-500">
-                    {{ Auth::user()->email }}
-                </div>
-
-                <div class="text-xs text-gray-400">
-                    Role: {{ Auth::user()->role }}
-                </div>
-            </div>
-
-            <div class="mt-3 space-y-1">
-                
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    Profile
-                </x-responsive-nav-link>
-
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <x-responsive-nav-link :href="route('logout')"
-                        onclick="event.preventDefault(); this.closest('form').submit();">
-                        Log Out
-                    </x-responsive-nav-link>
-                </form>
-
-            </div>
-        </div>
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button class="w-full text-left py-2 text-red-500">Logout</button>
+        </form>
     </div>
+
 </nav>
