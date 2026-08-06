@@ -6,15 +6,18 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Clinic;
 use App\Models\Schedule;
-use App\Models\Appointments;
+use App\Models\Appointment;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\AppointmentBooked;
 
 class BookingController extends Controller
 {
-    //Show booking page
+    // Show booking page
     public function show(User $doctor)
     {
-        $clinics = $doctor->clinis;
+        // FIX: correct relationship name
+        $clinics = $doctor->clinics ?? [];
 
         return view('booking.show', compact('doctor', 'clinics'));
     }
@@ -25,19 +28,21 @@ class BookingController extends Controller
         $doctorId = $request->doctor_id;
         $clinicId = $request->clinic_id;
         $date = Carbon::parse($request->date);
-        $day = $date->format('1'); // Monday... 
 
-        //Get schedule
+        // FIX: correct day format
+        $day = $date->format('l'); // Monday, Tuesday...
+
+        // Get schedule
         $schedule = Schedule::where('doctor_id', $doctorId)
-             ->where('clinic_id', $clinicId)
-             ->where('day', $day)
-             ->first();
+            ->where('clinic_id', $clinicId)
+            ->where('day', $day)
+            ->first();
 
         if (!$schedule) {
             return response()->json([]);
         }
 
-        // Generate slots (30 min)
+        // Generate slots (30 mins)
         $slots = [];
         $start = Carbon::parse($schedule->start_time);
         $end = Carbon::parse($schedule->end_time);
@@ -47,7 +52,7 @@ class BookingController extends Controller
             $start->addMinutes(30);
         }
 
-        //Remove booked slots
+        // Remove booked slots
         $booked = Appointment::where('doctor_id', $doctorId)
             ->where('clinic_id', $clinicId)
             ->whereDate('date', $date)
@@ -69,20 +74,21 @@ class BookingController extends Controller
             'time' => 'required',
             'name' => 'required',
             'phone' => 'required',
-            'email'=> 'required|email', 
+            'email' => 'required|email',
         ]);
 
-        Appointment::create([
+        // FIX: create appointment first
+        $appointment = Appointment::create([
             'doctor_id' => $request->doctor_id,
             'clinic_id' => $request->clinic_id,
             'date' => $request->date,
             'time' => $request->time,
             'status' => 'pending',
-            //Optional: create patient later
         ]);
 
+        // Send email
         Mail::to($request->email)->send(new AppointmentBooked($appointment));
 
-        return redirect()->back()->with('success', 'Appointment booked!');
+        return back()->with('success', 'Appointment booked!');
     }
 }

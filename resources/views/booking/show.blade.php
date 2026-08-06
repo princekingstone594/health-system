@@ -16,9 +16,12 @@
         <label class="block text-sm font-medium">Clinic</label>
         <select id="clinic" class="w-full border p-2 rounded">
             <option value="">Select clinic</option>
-            @foreach($clinics as $clinic)
+
+            @forelse($clinics as $clinic)
                 <option value="{{ $clinic->id }}">{{ $clinic->name }}</option>
-            @endforeach
+            @empty
+                <option disabled>No clinics available</option>
+            @endforelse
         </select>
     </div>
 
@@ -35,7 +38,7 @@
     </div>
 
     <!-- Booking Form -->
-    <form method="POST" action="{{ route('payment.checkout') }}">
+    <form method="POST" action="{{ route('booking.store') }}">
         @csrf
 
         <input type="hidden" name="doctor_id" value="{{ $doctor->id }}">
@@ -44,10 +47,14 @@
         <input type="hidden" name="time" id="time_input">
 
         <input type="text" name="name" placeholder="Your Name"
-               class="w-full border p-2 rounded mb-2">
+               class="w-full border p-2 rounded mb-2" required>
 
         <input type="text" name="phone" placeholder="Phone"
-               class="w-full border p-2 rounded mb-4">
+               class="w-full border p-2 rounded mb-2" required>
+
+        <!-- FIX: email field added -->
+        <input type="email" name="email" placeholder="Email"
+               class="w-full border p-2 rounded mb-4" required>
 
         <button class="w-full bg-blue-600 text-white py-2 rounded">
             Book Appointment
@@ -72,20 +79,25 @@ function loadSlots() {
         .then(data => {
             slotsDiv.innerHTML = '';
 
+            if (data.length === 0) {
+                slotsDiv.innerHTML = '<p class="text-gray-500">No slots available</p>';
+                return;
+            }
+
             data.forEach(time => {
                 const btn = document.createElement('button');
                 btn.innerText = time;
                 btn.type = "button";
                 btn.className = "bg-gray-200 px-2 py-1 rounded";
 
-                btn.onclick = () => selectSlot(time);
+                btn.onclick = (e) => selectSlot(time, e);
 
                 slotsDiv.appendChild(btn);
             });
         });
 }
 
-function selectSlot(time) {
+function selectSlot(time, e) {
     document.getElementById('time_input').value = time;
     document.getElementById('clinic_input').value = clinic.value;
     document.getElementById('date_input').value = date.value;
@@ -94,7 +106,7 @@ function selectSlot(time) {
         btn.classList.remove('bg-blue-500', 'text-white');
     });
 
-    event.target.classList.add('bg-blue-500', 'text-white');
+    e.target.classList.add('bg-blue-500', 'text-white');
 }
 </script>
 
