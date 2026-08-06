@@ -11,47 +11,41 @@ use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
     public function create(): View
     {
         return view('auth.login');
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
     public function store(LoginRequest $request): RedirectResponse
     {
-        // ✅ Authenticate user
+        // Authenticate
         $request->authenticate();
 
-        // ✅ Regenerate session (security)
+        // Secure session
         $request->session()->regenerate();
 
         $user = Auth::user();
 
-        // ✅ SAFETY CHECK (important)
+        // Safety check
         if (!$user || !$user->role) {
             Auth::logout();
+
             return redirect('/login')->withErrors([
                 'email' => 'User role not assigned. Contact admin.',
             ]);
         }
 
-        // ✅ CLEAN ROLE-BASED REDIRECT
-        return match ($user->role) {
+        // Normalize role (🔥 important)
+        $role = strtolower($user->role);
+
+        return match ($role) {
             'doctor' => redirect()->route('doctor.dashboard'),
             'receptionist' => redirect()->route('receptionist.dashboard'),
             'patient' => redirect()->route('patient.dashboard'),
-            default => redirect('/dashboard'),
+            default => abort(403, 'Invalid role'),
         };
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();
