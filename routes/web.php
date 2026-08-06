@@ -34,6 +34,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\PatientHistoryController;
 use App\Http\Controllers\FollowUpController;
+use App\Http\Controllers\Doctor\DiagnosisController;
 
 /*
 |--------------------------------------------------------------------------
@@ -183,6 +184,10 @@ Route::middleware(['auth'])->group(function () {
     */
     Route::view('/privacy-policy', 'policies.privacy')->name('privacy');
     Route::view('/terms', 'policies.terms')->name('terms');
+
+    Route::post('/doctor/ai-diagnosis', [DiagnosisController::class, 'generate'])
+        ->middleware(['auth', 'role:doctor'])
+        ->name('doctor.ai.diagnosis');
 });
 
 require __DIR__.'/auth.php';

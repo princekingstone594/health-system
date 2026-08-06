@@ -101,6 +101,29 @@
             @endforelse
         </div>
 
+        {{-- AI DIAGNOSIS --}}
+        <div class="bg-white rounded-2xl shadow-sm p-5">
+            <h3 class="font-semibold text-lg mb-3">AI Diagnosis Assistant</h3>
+
+            <form method="POST" action="{{ route('doctor.ai.diagnosis') }}">
+                @csrf 
+
+                <textarea name="symptoms"
+                          placeholder="Enter patient symptoms..."
+                          class="w-full border-gray-300 rounded-lg mb-3"></textarea>
+
+                <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg">
+                    Generate Diagnosis
+                </button>
+            </form>
+
+            @if(session('diagnosis'))
+                <div class="mt-4 p-4 bg-indigo-50 rounded-lg text-sm text-gray-700">
+                    {!! nl2br(e(session('diagnosis'))) !!} 
+                </div>
+            @ endif 
+        </div>
+
         {{-- TWO COLUMN SECTION --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
