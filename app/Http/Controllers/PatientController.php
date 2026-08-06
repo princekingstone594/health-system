@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Patient;
 use App\Models\Appointment;
 use App\Models\FollowUp;
+use Illuminate\Support\Facades\Auth;
 
 class PatientController extends Controller
 {
@@ -14,6 +15,10 @@ class PatientController extends Controller
      */
     public function dashboard()
     {
+        $this->authorizeRole('patient');
+
+        return view('patient.dashboard');
+        
         $patientId = auth()->id();
 
         $appointments = Appointment::where('user_id', $patientId)->get();

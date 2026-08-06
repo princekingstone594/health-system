@@ -6,12 +6,18 @@ use Illuminate\Http\Request;
 use App\Models\Appointment;
 use App\Models\FollowUp;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class DoctorController extends Controller
 {
     public function dashboard()
     {
         $doctorId = auth()->id();
+
+        // 🔐 AUTHORIZATION CHECK
+        $this->authorizeRole('doctor');
+
+        return view('doctor.dashboard');
 
         // 📊 Stats
         $totalAppointments = Appointment::where('doctor_id', $doctorId)->count();
