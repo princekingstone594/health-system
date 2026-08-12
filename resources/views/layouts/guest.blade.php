@@ -25,16 +25,15 @@
         <div class="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-brand-600/20 blur-3xl"></div>
         <div class="absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-brand-400/10 blur-3xl"></div>
         <div class="absolute top-1/3 left-1/4 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl"></div>
+        <div class="absolute bottom-1/4 right-1/4 h-48 w-48 rounded-full bg-sky-500/10 blur-3xl"></div>
 
         {{-- Grid pattern --}}
         <div class="absolute inset-0 opacity-[0.03]" style="background-image: linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px); background-size: 40px 40px;"></div>
 
         <div class="relative">
             <div class="flex items-center gap-3">
-                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-brand shadow-lg shadow-brand-500/30">
-                    <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                    </svg>
+                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-brand shadow-lg shadow-brand-500/30">
+                    <x-icon name="stethoscope" class="w-6 h-6 text-white" />
                 </div>
                 <span class="text-xl font-bold text-white">{{ config('app.name', 'MedFlow') }}</span>
             </div>
@@ -48,14 +47,17 @@
 
             {{-- Feature list --}}
             <div class="space-y-4">
-                @foreach(['AI-powered symptom checker', 'Smart appointment scheduling', 'Automated follow-ups'] as $feature)
+                @foreach([
+                    ['icon' => 'sparkles', 'label' => 'AI-powered symptom checker'],
+                    ['icon' => 'calendar', 'label' => 'Smart appointment scheduling'],
+                    ['icon' => 'bell', 'label' => 'Automated follow-ups'],
+                    ['icon' => 'shield', 'label' => 'HIPAA-grade security'],
+                ] as $feature)
                     <div class="flex items-center gap-3 text-slate-300">
                         <div class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-500/20">
-                            <svg class="w-3.5 h-3.5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
+                            <x-icon :name="$feature['icon']" class="w-3.5 h-3.5 text-brand-400" />
                         </div>
-                        <span class="text-sm">{{ $feature }}</span>
+                        <span class="text-sm">{{ $feature['label'] }}</span>
                     </div>
                 @endforeach
             </div>
@@ -74,22 +76,21 @@
     </div>
 
     {{-- Right panel (form) --}}
-    <div class="flex flex-1 flex-col items-center justify-center px-6 py-12 bg-surface-muted relative">
+    <div class="flex flex-1 flex-col items-center justify-center px-6 py-12 bg-surface-muted relative overflow-hidden">
 
-        {{-- Decorative gradient --}}
+        {{-- Decorative gradients --}}
         <div class="absolute top-0 right-0 h-64 w-64 rounded-full bg-brand-100/40 blur-3xl"></div>
+        <div class="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-violet-100/30 blur-3xl"></div>
 
         {{-- Mobile logo --}}
         <div class="lg:hidden flex items-center gap-2 mb-8 relative">
-            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-brand shadow-lg shadow-brand-500/30">
-                <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                </svg>
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-brand shadow-lg shadow-brand-500/30">
+                <x-icon name="stethoscope" class="w-5 h-5 text-white" />
             </div>
             <span class="text-lg font-bold text-slate-900">{{ config('app.name', 'MedFlow') }}</span>
         </div>
 
-        <div class="w-full max-w-md relative animate-fade-in">
+        <div class="w-full max-w-md relative animate-fade-in-up">
             <div class="card p-8 shadow-card-hover">
                 {{ $slot }}
             </div>
