@@ -47,7 +47,7 @@
                                 {{ $appt->patient->name ?? 'Patient' }}
                             </p>
                             <p class="text-sm text-slate-500">
-                                {{ \Carbon\Carbon::parse($appt->date)->format('M d, Y') }} at {{ $appt->time }}
+                                {{ \Carbon\Carbon::parse($appt->appointment_date)->format('M d, Y') }} at {{ $appt->time }}
                             </p>
                         </div>
                     </div>
@@ -143,7 +143,7 @@
                             <div>
                                 <p class="font-medium text-slate-800">{{ $appt->patient->name ?? 'Patient' }}</p>
                                 <p class="text-xs text-slate-500">
-                                    {{ \Carbon\Carbon::parse($appt->date)->format('M d, Y') }} at {{ $appt->time }}
+                                    {{ \Carbon\Carbon::parse($appt->appointment_date)->format('M d, Y') }} at {{ $appt->time }}
                                 </p>
                             </div>
                         </div>

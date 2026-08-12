@@ -13,26 +13,20 @@ class FollowUp extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'doctor_id',
-        'patient_id',
+        'user_id',
         'appointment_id',
         'message',
+        'response',
+        'status',
+        'ai_status',
     ];
-
-    /**
-     * 🧑‍⚕️ Doctor who generated the follow-up
-     */
-    public function doctor()
-    {
-        return $this->belongsTo(User::class, 'doctor_id');
-    }
 
     /**
      * 🧑 Patient receiving the follow-up
      */
     public function patient()
     {
-        return $this->belongsTo(User::class, 'patient_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**

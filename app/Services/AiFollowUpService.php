@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\User;
+use App\Models\FollowUp;
 use Illuminate\Support\Facades\Http;
 
 class AiFollowUpService

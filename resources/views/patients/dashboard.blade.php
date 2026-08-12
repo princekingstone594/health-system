@@ -51,7 +51,7 @@
                         <div>
                             <p class="font-semibold text-slate-800">Dr. {{ $appt->doctor->name ?? 'Doctor' }}</p>
                             <p class="text-sm text-slate-500">
-                                {{ \Carbon\Carbon::parse($appt->date)->format('M d, Y') }} at {{ $appt->time }}
+                                {{ \Carbon\Carbon::parse($appt->appointment_date)->format('M d, Y') }} at {{ $appt->time }}
                             </p>
                         </div>
                     </div>
@@ -102,7 +102,7 @@
                     <div class="p-5 border-b last:border-0">
                         <div class="flex justify-between mb-2">
                             <p class="font-semibold text-slate-800">Dr. {{ $appt->doctor->name ?? 'Doctor' }}</p>
-                            <span class="text-xs text-slate-400">{{ \Carbon\Carbon::parse($appt->date)->format('M d, Y') }}</span>
+                            <span class="text-xs text-slate-400">{{ \Carbon\Carbon::parse($appt->appointment_date)->format('M d, Y') }}</span>
                         </div>
 
                         @if($appt->is_shared_with_patient && $appt->diagnosis)

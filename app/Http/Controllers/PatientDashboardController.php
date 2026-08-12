@@ -23,8 +23,7 @@ class PatientDashboardController extends Controller
     {
         $this->authorizeRole('patient');
 
-        $patientId = auth()->id();
-        
+        $userId = auth()->id();
         $user = Auth::user();
 
         // 🔍 Get patient profile
@@ -35,36 +34,36 @@ class PatientDashboardController extends Controller
                 ->with('error', 'Patient profile not found.');
         }
 
-        // 📅 Upcoming appointments
-        $upcomingAppointments = Appointment::where('user_id', $patient->id)
+        // 📅 Upcoming appointments (for this user)
+        $upcomingAppointments = Appointment::where('user_id', $userId)
             ->where('appointment_date', '>=', now())
             ->with('doctor')
             ->orderBy('appointment_date', 'asc')
             ->get();
 
         // 🕘 Past appointments
-        $pastAppointments = Appointment::where('user_id', $patient->id)
+        $pastAppointments = Appointment::where('user_id', $userId)
             ->where('appointment_date', '<', now())
             ->with('doctor')
             ->orderBy('appointment_date', 'desc')
             ->get();
 
         // 📊 Stats
-        $totalAppointments = Appointment::where('user_id', $patient->id)->count();
+        $totalAppointments = Appointment::where('user_id', $userId)->count();
 
-        $upcomingCount = Appointment::where('user_id', $patient->id)
+        $upcomingCount = Appointment::where('user_id', $userId)
             ->where('appointment_date', '>=', now())
             ->count();
 
         // 🤖 STEP 5 — AUTO AI FOLLOW-UP (optional smart trigger)
         $this->autoTriggerFollowUp($patient);
 
-        // 📬 Get follow-ups
-        $followUps = FollowUp::where('user_id', $patient->id)
+        // 📬 Get follow-ups (for this user as patient)
+        $followUps = FollowUp::where('user_id', $userId)
             ->latest()
             ->get();
 
-        return view('patient.dashboard', compact(
+        return view('patients.dashboard', compact(
             'patient',
             'upcomingAppointments',
             'pastAppointments',
@@ -96,7 +95,7 @@ class PatientDashboardController extends Controller
     private function autoTriggerFollowUp($patient)
     {
         // 🕒 Check last follow-up (avoid spam)
-        $lastFollowUp = FollowUp::where('user_id', $patient->id)
+        $lastFollowUp = FollowUp::where('user_id', auth()->id())
             ->latest()
             ->first();
 
@@ -105,7 +104,7 @@ class PatientDashboardController extends Controller
         }
 
         // 📅 Check last appointment
-        $lastAppointment = Appointment::where('user_id', $patient->id)
+        $lastAppointment = Appointment::where('user_id', auth()->id())
             ->latest('appointment_date')
             ->first();
 

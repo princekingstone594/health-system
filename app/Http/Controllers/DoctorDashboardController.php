@@ -24,7 +24,7 @@ class DoctorDashboardController extends Controller
         // 📅 TODAY'S APPOINTMENTS
         $todayAppointments = Appointment::with('patient')
             ->where('doctor_id', $doctorId)
-            ->whereDate('date', $today)
+            ->whereDate('appointment_date', $today)
             ->orderBy('time', 'asc')
             ->get();
 
@@ -33,15 +33,15 @@ class DoctorDashboardController extends Controller
         // 📆 UPCOMING APPOINTMENTS (after today)
         $upcomingAppointments = Appointment::with('patient')
             ->where('doctor_id', $doctorId)
-            ->whereDate('date', '>', $today)
-            ->orderBy('date', 'asc')
+            ->whereDate('appointment_date', '>', $today)
+            ->orderBy('appointment_date', 'asc')
             ->orderBy('time', 'asc')
             ->limit(10)
             ->get();
 
-        // 🤖 AI FOLLOW-UPS (latest ones related to this doctor)
+        // 🤖 AI FOLLOW-UPS (latest ones for this doctor's patients)
         $followUps = FollowUp::with('patient')
-            ->where('doctor_id', $doctorId)
+            ->whereIn('user_id', Appointment::where('doctor_id', $doctorId)->pluck('user_id'))
             ->latest()
             ->limit(10)
             ->get();
