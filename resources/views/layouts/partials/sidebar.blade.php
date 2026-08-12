@@ -1,16 +1,23 @@
 @php
     $role = auth()->user()->role ?? 'guest';
     $initials = collect(explode(' ', auth()->user()->name ?? 'U'))->map(fn($w) => strtoupper(substr($w, 0, 1)))->take(2)->join('');
+    $roleLabel = match($role) {
+        'doctor' => 'Doctor Portal',
+        'patient' => 'Patient Portal',
+        'admin' => 'Admin Portal',
+        'receptionist' => 'Reception Desk',
+        default => 'Portal',
+    };
 @endphp
 
 {{-- Logo --}}
 <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10">
-    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-brand shadow-lg shadow-brand-500/30">
-        <x-icon name="heart" class="w-5 h-5 text-white" />
+    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-brand shadow-lg shadow-brand-500/30">
+        <x-icon name="stethoscope" class="w-5 h-5 text-white" />
     </div>
     <div>
         <p class="text-sm font-bold text-white tracking-tight">{{ config('app.name', 'MedFlow') }}</p>
-        <p class="text-[11px] text-slate-400 capitalize">{{ $role }} portal</p>
+        <p class="text-[11px] text-slate-400">{{ $roleLabel }}</p>
     </div>
 </div>
 
@@ -70,7 +77,7 @@
 {{-- User footer --}}
 <div class="border-t border-white/10 p-4">
     <div class="flex items-center gap-3 mb-3">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-xs font-bold text-white shadow-sm">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-xs font-bold text-white shadow-lg shadow-brand-500/20">
             {{ $initials }}
         </div>
         <div class="min-w-0 flex-1">
@@ -78,14 +85,14 @@
             <p class="text-xs text-slate-400 truncate">{{ Auth::user()->email }}</p>
         </div>
     </div>
-    <div class="flex gap-2">
-        <a href="{{ route('profile.edit') }}" class="flex-1 nav-item justify-center text-xs py-2">
+    <div class="grid grid-cols-2 gap-2">
+        <a href="{{ route('profile.edit') }}" class="flex items-center justify-center gap-1.5 rounded-lg bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-white/10 hover:text-white">
             <x-icon name="settings" class="w-4 h-4" />
             Profile
         </a>
-        <form method="POST" action="{{ route('logout') }}" class="flex-1">
+        <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit" class="w-full nav-item justify-center text-xs py-2 transition-colors hover:text-red-400">
+            <button type="submit" class="flex w-full items-center justify-center gap-1.5 rounded-lg bg-white/5 px-3 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-red-500/20 hover:text-red-400">
                 <x-icon name="logout" class="w-4 h-4" />
                 Logout
             </button>
